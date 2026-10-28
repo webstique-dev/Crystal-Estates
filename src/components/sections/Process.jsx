@@ -11,6 +11,20 @@ export default function Process() {
     () => {
       if (isReducedMotion()) return
 
+      // Heading animation
+      gsap.from('.process-sec .heading', {
+        scrollTrigger: {
+          trigger: '.process-sec .heading',
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+        y: 25,
+        opacity: 0,
+        duration: 0.7,
+        ease: 'power3.out',
+      })
+
+      // Step cards stagger
       gsap.from('.process-step', {
         scrollTrigger: {
           trigger: '.process-steps',

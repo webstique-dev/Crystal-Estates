@@ -35,6 +35,20 @@ export default function Faq() {
     () => {
       if (isReducedMotion()) return
 
+      // Heading animation
+      gsap.from('.faq-sec .heading', {
+        scrollTrigger: {
+          trigger: '.faq-sec .heading',
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+        y: 25,
+        opacity: 0,
+        duration: 0.7,
+        ease: 'power3.out',
+      })
+
+      // FAQ accordion items stagger
       gsap.from('.faq-card', {
         scrollTrigger: {
           trigger: '.faq-sec__list',

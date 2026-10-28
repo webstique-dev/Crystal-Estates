@@ -29,6 +29,20 @@ export default function Features() {
     () => {
       if (isReducedMotion()) return
 
+      // Heading animation
+      gsap.from('.features-sec .heading', {
+        scrollTrigger: {
+          trigger: '.features-sec .heading',
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+        y: 25,
+        opacity: 0,
+        duration: 0.7,
+        ease: 'power3.out',
+      })
+
+      // Cards stagger
       gsap.from('.feature-card-wrap', {
         scrollTrigger: {
           trigger: '.features-grid',

@@ -1,17 +1,17 @@
-import { useEffect, useRef } from 'react'
-import { motion, useInView, animate } from 'framer-motion'
+import { useRef } from 'react'
+import { useGSAP } from '@gsap/react'
+import { gsap, isReducedMotion } from '../../lib/gsap'
 export { LeafDecor } from './LeafDecor'
 
-/* Small, reusable building blocks. React Bits–style effects:
-   Reveal, SplitText, CountUp, SpotlightCard, Marquee. */
+/* Reusable layout primitives & GSAP-powered animated building blocks */
 
 export function Container({ children, className = '' }) {
   return <div className={`container ${className}`}>{children}</div>
 }
 
-export function Section({ id, variant = '', children }) {
+export function Section({ id, variant = '', children, ...rest }) {
   return (
-    <section id={id} className={`section ${variant ? `section--${variant}` : ''}`}>
+    <section id={id} className={`section ${variant ? `section--${variant}` : ''}`} {...rest}>
       <Container>{children}</Container>
     </section>
   )
@@ -45,56 +45,105 @@ export function Field({ label, children }) {
   )
 }
 
-/* Fade + slide up when scrolled into view */
-export function Reveal({ children, delay = 0, y = 16, className = '', ...rest }) {
+/* GSAP-powered ScrollTrigger Reveal Component */
+export function Reveal({ children, delay = 0, y = 20, className = '', ...rest }) {
+  const ref = useRef(null)
+
+  useGSAP(
+    () => {
+      if (isReducedMotion() || !ref.current) return
+      gsap.from(ref.current, {
+        scrollTrigger: {
+          trigger: ref.current,
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+        y,
+        opacity: 0,
+        duration: 0.7,
+        delay,
+        ease: 'power3.out',
+      })
+    },
+    { scope: ref },
+  )
+
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.05 }}
-      transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
-      {...rest}
-    >
+    <div ref={ref} className={className} {...rest}>
       {children}
-    </motion.div>
+    </div>
   )
 }
 
-/* Word-by-word headline animation */
-export function SplitText({ text, className = '', delay = 0.05 }) {
+/* GSAP-powered Word-by-Word SplitText Component */
+export function SplitText({ text, className = '', delay = 0.04 }) {
+  const ref = useRef(null)
   const words = text.split(' ')
+
+  useGSAP(
+    () => {
+      if (isReducedMotion() || !ref.current) return
+      const wordEls = ref.current.querySelectorAll('.split-word')
+      if (!wordEls.length) return
+
+      gsap.from(wordEls, {
+        scrollTrigger: {
+          trigger: ref.current,
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+        y: 18,
+        opacity: 0,
+        stagger: delay,
+        duration: 0.6,
+        ease: 'power3.out',
+      })
+    },
+    { scope: ref },
+  )
+
   return (
-    <span className={className} aria-label={text}>
+    <span ref={ref} className={className} aria-label={text}>
       {words.map((w, i) => (
-        <span key={i} style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom' }}>
-          <motion.span
-            style={{ display: 'inline-block' }}
-            initial={{ y: '110%' }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.7, delay: i * delay, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {w}&nbsp;
-          </motion.span>
+        <span key={i} className="split-word" style={{ display: 'inline-block', marginRight: '0.25em' }}>
+          {w}
         </span>
       ))}
     </span>
   )
 }
 
-/* Number that counts up when visible */
+/* GSAP-powered ScrollTrigger CountUp Component */
 export function CountUp({ to, suffix = '' }) {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true })
-  useEffect(() => {
-    if (!inView || !ref.current) return
-    const controls = animate(0, to, {
-      duration: 1.8,
-      ease: 'easeOut',
-      onUpdate: (v) => { if (ref.current) ref.current.textContent = Math.round(v).toLocaleString('en-IN') + suffix },
-    })
-    return () => controls.stop()
-  }, [inView, to, suffix])
+
+  useGSAP(
+    () => {
+      if (isReducedMotion() || !ref.current) {
+        if (ref.current) ref.current.textContent = Number(to).toLocaleString('en-IN') + suffix
+        return
+      }
+
+      const counter = { val: 0 }
+      gsap.to(counter, {
+        val: to,
+        duration: 1.8,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: ref.current,
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+        onUpdate: () => {
+          if (ref.current) {
+            ref.current.textContent = Math.round(counter.val).toLocaleString('en-IN') + suffix
+          }
+        },
+      })
+    },
+    { scope: ref },
+  )
+
   return <span ref={ref}>0{suffix}</span>
 }
 
@@ -112,11 +161,31 @@ export function SpotlightCard({ children, className = '' }) {
   )
 }
 
-/* Infinite scrolling strip */
+/* Infinite scrolling strip with GSAP ScrollTrigger fade-in */
 export function Marquee({ items }) {
+  const marqueeRef = useRef(null)
   const doubled = [...items, ...items]
+
+  useGSAP(
+    () => {
+      if (isReducedMotion() || !marqueeRef.current) return
+      gsap.from(marqueeRef.current, {
+        scrollTrigger: {
+          trigger: marqueeRef.current,
+          start: 'top 90%',
+          toggleActions: 'play none none none',
+        },
+        opacity: 0,
+        y: 15,
+        duration: 0.6,
+        ease: 'power2.out',
+      })
+    },
+    { scope: marqueeRef },
+  )
+
   return (
-    <div className="marquee" aria-hidden="true">
+    <div className="marquee" aria-hidden="true" ref={marqueeRef}>
       <div className="marquee__track">
         {doubled.map((it, i) => (
           <span className="marquee__item" key={i}>{it}</span>

@@ -39,6 +39,20 @@ export default function Testimonials() {
     () => {
       if (isReducedMotion()) return
 
+      // Heading animation
+      gsap.from('.reviews-sec .heading', {
+        scrollTrigger: {
+          trigger: '.reviews-sec .heading',
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+        y: 25,
+        opacity: 0,
+        duration: 0.7,
+        ease: 'power3.out',
+      })
+
+      // Cards stagger
       gsap.from('.quote-card-wrap', {
         scrollTrigger: {
           trigger: '.reviews-grid',
