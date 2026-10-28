@@ -50,7 +50,7 @@ export default function Hero({ onSearch }) {
         .from(
           '.hero-ref__stat-card',
           {
-            x: 24,
+            y: 20,
             opacity: 0,
             stagger: 0.12,
             duration: 0.6,

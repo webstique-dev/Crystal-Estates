@@ -9,9 +9,10 @@ export function Container({ children, className = '' }) {
   return <div className={`container ${className}`}>{children}</div>
 }
 
-export function Section({ id, variant = '', children, ...rest }) {
+export function Section({ id, variant = '', className = '', children, ...rest }) {
+  const cls = ['section', variant && `section--${variant}`, className].filter(Boolean).join(' ')
   return (
-    <section id={id} className={`section ${variant ? `section--${variant}` : ''}`} {...rest}>
+    <section id={id} className={cls} {...rest}>
       <Container>{children}</Container>
     </section>
   )
