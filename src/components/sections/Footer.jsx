@@ -1,8 +1,8 @@
 import { useRef } from 'react'
-import { MessageCircle, Phone, MapPin, Mail, ArrowUp } from 'lucide-react'
+import { Phone, MapPin, Mail, ArrowUp } from 'lucide-react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
-import { Container } from '../ui'
+import { Container, WhatsAppIcon } from '../ui'
 import { business, navLinks } from '../../data/site'
 
 export default function Footer() {
@@ -123,7 +123,7 @@ export default function Footer() {
         rel="noopener noreferrer"
         aria-label="Chat with Crystal Estates on WhatsApp"
       >
-        <MessageCircle size={28} />
+        <WhatsAppIcon size={30} />
         <span className="wa-float__tooltip">Chat on WhatsApp</span>
       </a>
     </>

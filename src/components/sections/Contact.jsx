@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle2 } from 'lucide-react'
+import { MapPin, Phone, Mail, Clock, CheckCircle2 } from 'lucide-react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
-import { Section, SectionHeading, Field, Button, LeafDecor } from '../ui'
+import { Section, SectionHeading, Field, Button, LeafDecor, WhatsAppIcon } from '../ui'
 import { business, plots } from '../../data/site'
 
 const empty = { name: '', phone: '', email: '', plot: '', message: '' }
@@ -81,7 +81,7 @@ export function EnquiryForm({ selectedPlot }) {
         </Field>
 
         <Button type="submit" variant="primary" block size="sm">
-          <Send size={16} /> Send Enquiry via WhatsApp
+          <WhatsAppIcon size={18} /> Send Enquiry via WhatsApp
         </Button>
 
         {sent && (

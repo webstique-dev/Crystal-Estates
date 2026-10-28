@@ -38,3 +38,4 @@ async function inspectHeroDetails() {
 }
 
 inspectHeroDetails().catch(console.error);
+
