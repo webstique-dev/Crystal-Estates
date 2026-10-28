@@ -39,79 +39,55 @@ export const stats = [
   { value: 10, suffix: '+', label: 'Years of experience' }, // TODO: replace with real number
 ]
 
-// SAMPLE plots — replace with real inventory.
+// Plot inventory
 export const plots = [
   {
     id: 'ce-001',
-    name: 'Sridevi Gardens Phase 1',
-    location: 'Valasaravakkam',
+    name: 'Somamangalam',
+    location: 'Somamangalam',
     area: 1200,
     facing: 'East',
     price: 7800000,
     approval: 'DTCP Approved',
     status: 'Available',
     featured: true,
-    image: '/images/plot-1.jpg',
+    image: '/images/somamangalam.jpg',
   },
   {
     id: 'ce-002',
-    name: 'Akr Nagar Premium Plots',
-    location: 'Valasaravakkam',
+    name: 'Kolapakkam',
+    location: 'Kolapakkam',
     area: 1500,
     facing: 'North',
     price: 9900000,
     approval: 'CMDA Approved',
     status: 'Available',
     featured: true,
-    image: '/images/plot-2.jpg',
+    image: '/images/kolapakkam.jpg',
   },
   {
     id: 'ce-003',
-    name: 'Crystal Greens',
-    location: 'Porur',
+    name: 'Brammadesam',
+    location: 'Brammadesam',
     area: 900,
     facing: 'West',
     price: 4950000,
     approval: 'DTCP Approved',
     status: 'Few Left',
     featured: true,
-    image: '/images/plot-3.jpg',
+    image: '/images/brammadesam.jpg',
   },
   {
     id: 'ce-004',
-    name: 'Crystal Meadows',
-    location: 'Mangadu',
+    name: 'Ozhalai Panchayath',
+    location: 'Ozhalai Panchayath',
     area: 1800,
     facing: 'South',
     price: 6300000,
     approval: 'RERA Registered',
     status: 'Available',
     featured: true,
-    image: '/images/plot-4.jpg',
-  },
-  {
-    id: 'ce-005',
-    name: 'Leaf Avenue',
-    location: 'Maduravoyal',
-    area: 1000,
-    facing: 'East',
-    price: 6200000,
-    approval: 'CMDA Approved',
-    status: 'Few Left',
-    featured: false,
-    image: '/images/plot-1.jpg',
-  },
-  {
-    id: 'ce-006',
-    name: 'Crystal Heights Layout',
-    location: 'Valasaravakkam',
-    area: 2400,
-    facing: 'North',
-    price: 15600000,
-    approval: 'CMDA Approved',
-    status: 'Sold Out',
-    featured: false,
-    image: '/images/plot-2.jpg',
+    image: '/images/ozhalai-panchayath.jpg',
   },
 ]
 
@@ -140,7 +116,7 @@ export const socialLinks = [
 ]
 
 export const searchOptions = {
-  locations: ['Valasaravakkam', 'Porur', 'Mangadu', 'Maduravoyal'],
+  locations: ['Somamangalam', 'Kolapakkam', 'Brammadesam', 'Ozhalai Panchayath'],
   budgets: [
     { label: 'Any budget', max: Infinity },
     { label: 'Under ₹50 Lakh', max: 5000000 },
@@ -175,9 +151,9 @@ export const steps = [
 
 // SAMPLE reviews — replace with real customer reviews (e.g. from Justdial).
 export const testimonials = [
-  { name: 'Ramesh K.', place: 'Valasaravakkam', text: 'The team explained every document patiently. We registered our plot within three weeks with no surprises.' },
-  { name: 'Priya S.', place: 'Porur', text: 'Honest pricing and very responsive. They arranged site visits around our weekend schedule.' },
-  { name: 'Anand M.', place: 'Mangadu', text: 'Clear titles and a smooth bank loan process. I would happily recommend Crystal Estates.' },
+  { name: 'Ramesh K.', place: 'Somamangalam', text: 'The team explained every document patiently. We registered our plot within three weeks with no surprises.' },
+  { name: 'Priya S.', place: 'Kolapakkam', text: 'Honest pricing and very responsive. They arranged site visits around our weekend schedule.' },
+  { name: 'Anand M.', place: 'Brammadesam', text: 'Clear titles and a smooth bank loan process. I would happily recommend Crystal Estates.' },
 ]
 
 export const faqs = [

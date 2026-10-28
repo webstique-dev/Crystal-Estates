@@ -134,7 +134,7 @@ export default function About() {
           <div className="excellence-feature">
             <h4>Wide Property Selection</h4>
             <p>
-              From prime residential plots in Valasaravakkam to fast-growing gated layouts in Porur, Mangadu, and Maduravoyal.
+              From prime residential plots in Somamangalam and Kolapakkam to fast-growing gated layouts in Brammadesam and Ozhalai Panchayath.
             </p>
           </div>
 
