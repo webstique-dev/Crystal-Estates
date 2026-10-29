@@ -1,3 +1,5 @@
+'use client'
+
 import { useRef } from 'react'
 import { MapPin, Compass, Ruler, ArrowUpRight, ShieldCheck } from 'lucide-react'
 import { useGSAP } from '@gsap/react'

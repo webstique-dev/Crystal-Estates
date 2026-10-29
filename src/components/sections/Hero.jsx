@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useRef } from 'react'
 import { ArrowUpRight, Search, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { useGSAP } from '@gsap/react'

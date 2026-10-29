@@ -1,3 +1,5 @@
+'use client'
+
 import { useRef } from 'react'
 import { Star, CheckCircle } from 'lucide-react'
 import { useGSAP } from '@gsap/react'

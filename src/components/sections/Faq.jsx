@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useRef } from 'react'
 import { Plus, Minus } from 'lucide-react'
 import { useGSAP } from '@gsap/react'

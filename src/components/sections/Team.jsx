@@ -1,3 +1,5 @@
+'use client'
+
 import { useRef } from 'react'
 import { ArrowRight, UserCheck } from 'lucide-react'
 import { useGSAP } from '@gsap/react'

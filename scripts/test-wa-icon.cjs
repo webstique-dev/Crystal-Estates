@@ -26,3 +26,4 @@ async function testWhatsAppIcons() {
 }
 
 testWhatsAppIcons().catch(console.error);
+
