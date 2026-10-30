@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Menu, X, Phone } from 'lucide-react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
@@ -30,6 +32,9 @@ const XIcon = ({ size = 14 }) => (
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState('home')
+  const pathname = usePathname()
+  const isHome = pathname === '/'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -37,6 +42,31 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Spy on scroll sections on the homepage to highlight the active link
+  useEffect(() => {
+    if (!isHome) {
+      return
+    }
+
+    const sectionIds = ['home', 'plots', 'about', 'process', 'reviews', 'contact']
+    const handleScrollSpy = () => {
+      const scrollPos = window.scrollY + 180
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const id = sectionIds[i]
+        const el = document.getElementById(id)
+        if (el && el.offsetTop <= scrollPos) {
+          setActiveSection(id)
+          return
+        }
+      }
+      setActiveSection('home')
+    }
+
+    handleScrollSpy()
+    window.addEventListener('scroll', handleScrollSpy, { passive: true })
+    return () => window.removeEventListener('scroll', handleScrollSpy)
+  }, [isHome])
 
   useGSAP(() => {
     if (isReducedMotion()) return
@@ -48,21 +78,57 @@ export default function Navbar() {
     })
   })
 
+  // Helper to compute correct target URL across routes
+  const getHref = useCallback((rawHref) => {
+    const hash = rawHref.startsWith('#') ? rawHref : `#${rawHref}`
+    if (isHome) {
+      return hash
+    }
+    // When navigating from other pages (e.g. /layout-viewer)
+    if (hash === '#home') {
+      return '/'
+    }
+    return `/${hash}`
+  }, [isHome])
+
+  const handleNavClick = (e, rawHref) => {
+    if (isHome) {
+      const targetId = rawHref.replace(/^#/, '')
+      const targetEl = document.getElementById(targetId)
+      if (targetEl) {
+        e.preventDefault()
+        targetEl.scrollIntoView({ behavior: 'smooth' })
+        setActiveSection(targetId)
+      }
+    }
+    setOpen(false)
+  }
+
   return (
     <header className={`nav ${scrolled ? 'nav--scrolled' : ''}`}>
       <Container className="nav__container">
-        {/* Brand Logo */}
-        <a href="#home" className="nav__logo" aria-label={business.name}>
+        {/* Brand Logo - clicking redirects to Homepage from any page */}
+        <Link href="/" className="nav__logo" aria-label={business.name} onClick={() => setOpen(false)}>
           <img src="/logo.png" alt={business.name} width="160" height="42" />
-        </a>
+        </Link>
 
         {/* Center Floating Pill Menu */}
         <nav className="nav__pill-menu" aria-label="Main">
-          {navLinks.map((l) => (
-            <a key={l.href} href={l.href} className="nav__pill-link">
-              {l.label}
-            </a>
-          ))}
+          {navLinks.map((l) => {
+            const sectionId = l.href.replace(/^#/, '')
+            const isActive = isHome && activeSection === sectionId
+
+            return (
+              <Link
+                key={l.href}
+                href={getHref(l.href)}
+                className={`nav__pill-link ${isActive ? 'nav__pill-link--active' : ''}`}
+                onClick={(e) => handleNavClick(e, l.href)}
+              >
+                {l.label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Right Actions: Socials & Call Pill */}
@@ -105,16 +171,21 @@ export default function Navbar() {
       {open && (
         <div className="nav__drawer">
           <div className="nav__drawer-links">
-            {navLinks.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                className="nav__drawer-link"
-                onClick={() => setOpen(false)}
-              >
-                {l.label}
-              </a>
-            ))}
+            {navLinks.map((l) => {
+              const sectionId = l.href.replace(/^#/, '')
+              const isActive = isHome && activeSection === sectionId
+
+              return (
+                <Link
+                  key={l.href}
+                  href={getHref(l.href)}
+                  className={`nav__drawer-link ${isActive ? 'nav__drawer-link--active' : ''}`}
+                  onClick={(e) => handleNavClick(e, l.href)}
+                >
+                  {l.label}
+                </Link>
+              )
+            })}
           </div>
           <div className="nav__drawer-footer">
             <a

@@ -1,6 +1,8 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useCallback } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Phone, MapPin, Mail, ArrowUp } from 'lucide-react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
@@ -9,10 +11,19 @@ import { business, navLinks } from '../../data/site'
 
 export default function Footer() {
   const footerRef = useRef(null)
+  const pathname = usePathname()
+  const isHome = pathname === '/'
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  const getHref = useCallback((rawHref) => {
+    const hash = rawHref.startsWith('#') ? rawHref : `#${rawHref}`
+    if (isHome) return hash
+    if (hash === '#home') return '/'
+    return `/${hash}`
+  }, [isHome])
 
   useGSAP(
     () => {
@@ -41,9 +52,9 @@ export default function Footer() {
           <div className="footer-ref__top">
             {/* Brand column */}
             <div className="footer-ref__col footer-ref__col--brand">
-              <a href="#home" className="footer-ref__logo" aria-label={business.name}>
+              <Link href="/" className="footer-ref__logo" aria-label={business.name}>
                 <img src="/logo-white.png" alt={business.name} width="160" height="42" />
-              </a>
+              </Link>
               <p className="footer-ref__tagline">{business.tagline}</p>
               <div className="footer-ref__office-info">
                 <span><MapPin size={15} /> {business.address.city}</span>
@@ -58,7 +69,7 @@ export default function Footer() {
               <ul>
                 {navLinks.map((l) => (
                   <li key={l.href}>
-                    <a href={l.href}>{l.label}</a>
+                    <Link href={getHref(l.href)}>{l.label}</Link>
                   </li>
                 ))}
               </ul>
@@ -68,10 +79,10 @@ export default function Footer() {
             <div className="footer-ref__col">
               <h4>Verification</h4>
               <ul>
-                <li><a href="#plots">DTCP Approved Plots</a></li>
-                <li><a href="#plots">CMDA Approved Layouts</a></li>
-                <li><a href="#about">Clear Title Guarantee</a></li>
-                <li><a href="#about">Bank Loan Partnerships</a></li>
+                <li><Link href={getHref('#plots')}>DTCP Approved Plots</Link></li>
+                <li><Link href={getHref('#plots')}>CMDA Approved Layouts</Link></li>
+                <li><Link href={getHref('#about')}>Clear Title Guarantee</Link></li>
+                <li><Link href={getHref('#about')}>Bank Loan Partnerships</Link></li>
                 <li><a href={business.justdial} target="_blank" rel="noopener noreferrer">Verified Justdial Listing</a></li>
               </ul>
             </div>
@@ -98,35 +109,40 @@ export default function Footer() {
             </div>
           </div>
 
+          {/* Bottom strip */}
           <div className="footer-ref__bottom">
-            <div className="footer-ref__legal">
-              <span>© 2026 {business.name}. All rights reserved.</span>
-              <span className="footer-ref__disclaimer">
-                Plot details and prices are indicative — please confirm at the site office.
-              </span>
+            <p className="footer-ref__copy">
+              © {new Date().getFullYear()} {business.name}. All rights reserved. DTCP & CMDA approved residential plots.
+            </p>
+            <div className="footer-ref__actions">
+              <Link href={getHref('#plots')} className="footer-ref__link">
+                View Plots
+              </Link>
+              <Link href={getHref('#contact')} className="footer-ref__link">
+                Schedule Visit
+              </Link>
+              <button
+                type="button"
+                className="footer-ref__scroll-top"
+                onClick={scrollToTop}
+                aria-label="Scroll to top"
+              >
+                <ArrowUp size={16} />
+              </button>
             </div>
-            <button
-              onClick={scrollToTop}
-              className="footer-ref__back-top"
-              aria-label="Back to top"
-            >
-              <span>Back to Top</span>
-              <ArrowUp size={15} />
-            </button>
           </div>
         </Container>
       </footer>
 
       {/* Floating WhatsApp Action Button */}
       <a
-        className="wa-float"
-        href={`https://wa.me/${business.whatsapp}`}
+        href={`https://wa.me/${business.whatsapp}?text=Hello%20Crystal%20Estates,%20I%20would%20like%20to%20inquire%20about%20your%20available%20plots.`}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Chat with Crystal Estates on WhatsApp"
+        className="wa-float"
+        aria-label="Chat with us on WhatsApp"
       >
-        <WhatsAppIcon size={30} />
-        <span className="wa-float__tooltip">Chat on WhatsApp</span>
+        <WhatsAppIcon size={28} />
       </a>
     </>
   )

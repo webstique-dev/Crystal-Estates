@@ -1,0 +1,635 @@
+/* ==========================================================================
+   Layout Viewer & Plot Management Page Styles (Template Theme Based)
+   Crystal Estates - Light Emerald Luxury Palette
+   ========================================================================== */
+
+.lv-page {
+  min-height: 100vh;
+  background: var(--bg, #f9fbf9);
+  color: var(--ink, #111e16);
+  padding: 100px 0 80px; /* offset for fixed navbar */
+  font-family: var(--font-body, var(--font-inter, 'Inter', system-ui, sans-serif));
+}
+
+.lv-container {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(12px, 3vw, 24px);
+  box-sizing: border-box;
+}
+
+/* Top Navigation Bar */
+.lv-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.lv-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--green-900, #0a5c36);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid var(--line, #e3ece6);
+  box-shadow: 0 2px 8px rgba(10, 92, 54, 0.05);
+  transition: all 0.2s ease;
+}
+
+.lv-back-btn:hover {
+  background: var(--green-50, #eef6f1);
+  border-color: var(--green-700, #0e7a48);
+  transform: translateX(-3px);
+}
+
+.lv-location-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted, #4e6355);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Page Hero Header */
+.lv-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.lv-header__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-50, #eef6f1);
+  color: var(--green-900, #0a5c36);
+  border: 1px solid rgba(10, 92, 54, 0.2);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.lv-header__title {
+  color: var(--ink, #111e16);
+  font-family: var(--font-display, var(--font-cormorant, 'Cormorant Garamond', Georgia, serif));
+  font-size: clamp(1.85rem, 4vw, 3rem);
+  font-weight: 700;
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+}
+
+.lv-header__desc {
+  color: var(--muted, #4e6355);
+  max-width: 640px;
+  margin: 0 auto;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Toolbar & Action Controls */
+.lv-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 1px solid var(--line, #e3ece6);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(10, 92, 54, 0.04);
+}
+
+.lv-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-50, #eef6f1);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #e3ece6);
+}
+
+.lv-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted, #4e6355);
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.lv-tab-btn:hover {
+  color: var(--ink, #111e16);
+}
+
+.lv-tab-btn--active {
+  background: var(--green-900, #0a5c36);
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(10, 92, 54, 0.25);
+}
+
+.lv-tab-count {
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
+.lv-tab-btn--active .lv-tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.lv-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lv-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--green-900, #0a5c36);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(10, 92, 54, 0.25);
+  transition: all 0.2s ease;
+}
+
+.lv-add-btn:hover {
+  background: var(--green-700, #0e7a48);
+  transform: translateY(-1px);
+}
+
+/* Management Dashboard Cards */
+.lv-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.lv-stat-card {
+  background: #ffffff;
+  border: 1px solid var(--line, #e3ece6);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(10, 92, 54, 0.04);
+}
+
+.lv-stat-label {
+  font-size: 0.72rem;
+  color: var(--muted, #4e6355);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.lv-stat-val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--ink, #111e16);
+}
+
+/* Management Inventory Table */
+.lv-mgmt-card {
+  background: #ffffff;
+  border: 1px solid var(--line, #e3ece6);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(10, 92, 54, 0.06);
+}
+
+.lv-mgmt-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line, #e3ece6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #ffffff;
+}
+
+.lv-mgmt-title {
+  margin: 0;
+  font-family: var(--font-display, var(--font-cormorant, 'Cormorant Garamond', Georgia, serif));
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--green-900, #0a5c36);
+}
+
+.lv-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lv-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.lv-table th {
+  padding: 14px 18px;
+  background: var(--green-50, #eef6f1);
+  color: var(--green-900, #0a5c36);
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--line, #e3ece6);
+  white-space: nowrap;
+}
+
+.lv-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line, #e3ece6);
+  color: var(--ink, #111e16);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.lv-table tr:hover td {
+  background: var(--green-50, #eef6f1);
+}
+
+.lv-plot-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--green-50, #eef6f1);
+  color: var(--green-900, #0a5c36);
+  font-weight: 800;
+  font-size: 0.8rem;
+  border: 1px solid rgba(10, 92, 54, 0.2);
+}
+
+/* Status Select in Table */
+.lv-status-select {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--line, #e3ece6);
+  outline: none;
+  background: #ffffff;
+  color: var(--ink, #111e16);
+  transition: all 0.15s ease;
+}
+
+.lv-status-select--Available { color: #0284c7; border-color: #38bdf8; background: rgba(56, 189, 248, 0.08); }
+.lv-status-select--Booked    { color: #16a34a; border-color: #4ade80; background: rgba(34, 197, 94, 0.08); }
+.lv-status-select--Sold      { color: #dc2626; border-color: #f87171; background: rgba(239, 68, 68, 0.08); }
+.lv-status-select--Blocked   { color: #ea580c; border-color: #fb923c; background: rgba(249, 115, 22, 0.08); }
+
+/* Table Action Buttons */
+.lv-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line, #e3ece6);
+  background: #ffffff;
+  color: var(--muted, #4e6355);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lv-action-btn:hover {
+  background: var(--green-50, #eef6f1);
+  color: var(--green-900, #0a5c36);
+  border-color: var(--green-700, #0e7a48);
+}
+
+.lv-action-btn--delete:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #dc2626;
+}
+
+/* Modal for Add / Edit Plot */
+.lv-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 92, 54, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.lv-modal {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border: 1px solid var(--line, #e3ece6);
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: 0 25px 60px rgba(10, 92, 54, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+  color: var(--ink, #111e16);
+}
+
+.lv-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line, #e3ece6);
+}
+
+.lv-modal__title {
+  margin: 0;
+  font-family: var(--font-display, var(--font-cormorant, 'Cormorant Garamond', Georgia, serif));
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--green-900, #0a5c36);
+}
+
+.lv-modal__close {
+  background: var(--green-50, #eef6f1);
+  border: 1px solid var(--line, #e3ece6);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  color: var(--muted, #4e6355);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lv-modal__close:hover {
+  background: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
+}
+
+/* Form Fields */
+.lv-form-group {
+  margin-bottom: 14px;
+}
+
+.lv-form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--green-900, #0a5c36);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.lv-input,
+.lv-select,
+.lv-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid var(--line, #e3ece6);
+  color: var(--ink, #111e16);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.lv-input:focus,
+.lv-select:focus,
+.lv-textarea:focus {
+  border-color: var(--green-900, #0a5c36);
+  box-shadow: 0 0 0 3px rgba(10, 92, 54, 0.1);
+}
+
+.lv-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.lv-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.lv-submit-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--green-900, #0a5c36);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lv-submit-btn:hover {
+  background: var(--green-700, #0e7a48);
+  transform: translateY(-1px);
+}
+
+.lv-cancel-btn {
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid var(--line, #e3ece6);
+  color: var(--muted, #4e6355);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lv-cancel-btn:hover {
+  background: var(--green-50, #eef6f1);
+  color: var(--green-900, #0a5c36);
+}
+
+/* Toast message */
+.lv-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: var(--green-900, #0a5c36);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  box-shadow: 0 10px 25px rgba(10, 92, 54, 0.35);
+  z-index: 100000;
+  animation: lvToastAnim 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes lvToastAnim {
+  from { opacity: 0; transform: translate(-50%, 15px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Responsive down to 320px */
+@media (max-width: 640px) {
+  .lv-page {
+    padding: 85px 0 60px;
+  }
+  .lv-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px;
+    gap: 10px;
+  }
+  .lv-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 4px;
+    box-sizing: border-box;
+  }
+  .lv-tab-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 6px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+  .lv-actions {
+    width: 100%;
+  }
+  .lv-add-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+  }
+  .lv-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .lv-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .lv-stat-card {
+    padding: 12px 10px;
+    border-radius: 12px;
+  }
+  .lv-stat-val {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .lv-tab-btn {
+    padding: 7px 4px;
+    font-size: 0.74rem;
+    gap: 4px;
+  }
+  .lv-tab-count {
+    padding: 1px 5px;
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lv-nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .lv-back-btn {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+  }
+  .lv-location-badge {
+    font-size: 0.76rem;
+  }
+  .lv-header__eyebrow {
+    font-size: 0.68rem;
+    padding: 3px 10px;
+  }
+  .lv-header__title {
+    font-size: clamp(1.65rem, 6.5vw, 2.2rem);
+  }
+  .lv-header__desc {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .lv-modal-backdrop {
+    padding: 8px;
+  }
+  .lv-modal {
+    padding: 16px 12px;
+    border-radius: 16px;
+    max-height: 94vh;
+  }
+  .lv-modal__title {
+    font-size: 1.25rem;
+  }
+  .lv-input,
+  .lv-select,
+  .lv-textarea {
+    font-size: 16px; /* prevent iOS auto-zoom */
+    padding: 9px 11px;
+  }
+  .lv-form-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .lv-submit-btn,
+  .lv-cancel-btn {
+    width: 100%;
+    text-align: center;
+    padding: 11px;
+  }
+}

@@ -1,0 +1,832 @@
+/* ==========================================================================
+   Interactive Real Estate Plot Viewer Styles
+   Crystal Estates - Template Theme Based
+   ========================================================================== */
+
+.plot-viewer {
+  --pv-bg: #ffffff;
+  --pv-surface: #ffffff;
+  --pv-surface-border: #e3ece6;
+  --pv-text-main: var(--ink, #111e16);
+  --pv-text-muted: var(--muted, #4e6355);
+  --pv-primary: var(--green-900, #0a5c36);
+  --pv-primary-hover: var(--green-700, #0e7a48);
+
+  /* Status Colors */
+  --color-avail: #38bdf8;        /* Sky Blue */
+  --color-avail-rgb: 56, 189, 248;
+  --color-booked: #22c55e;       /* Green */
+  --color-booked-rgb: 34, 197, 94;
+  --color-sold: #ef4444;         /* Red */
+  --color-sold-rgb: 239, 68, 68;
+  --color-blocked: #f97316;      /* Orange */
+  --color-blocked-rgb: 249, 115, 22;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: var(--pv-bg);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--pv-surface-border);
+  box-shadow: 0 16px 40px -12px rgba(10, 92, 54, 0.08), 0 0 0 1px var(--pv-surface-border);
+  color: var(--pv-text-main);
+  font-family: inherit;
+  user-select: none;
+}
+
+/* Fullscreen mode */
+.plot-viewer:fullscreen,
+.plot-viewer--fullscreen {
+  max-width: none;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  z-index: 999999;
+}
+
+/* Header & Filter Bar (Template Styled) */
+.plot-viewer__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--pv-surface-border);
+  z-index: 10;
+}
+
+.plot-viewer__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plot-viewer__title {
+  margin: 0;
+  font-family: var(--font-display, var(--font-cormorant, 'Cormorant Garamond', Georgia, serif));
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--green-900, #0a5c36);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.plot-viewer__badge {
+  font-family: var(--font-body, var(--font-inter, 'Inter', system-ui, sans-serif));
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--green-50, #eef6f1);
+  color: var(--green-900, #0a5c36);
+  border: 1px solid rgba(10, 92, 54, 0.2);
+}
+
+.plot-viewer__subtitle {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--pv-text-muted);
+}
+
+/* Status Filter Buttons */
+.plot-viewer__filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.plot-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #ffffff;
+  border: 1px solid var(--pv-surface-border);
+  color: var(--pv-text-main);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.plot-filter-btn:hover {
+  background: var(--green-50, #eef6f1);
+  border-color: var(--green-700, #0e7a48);
+  transform: translateY(-1px);
+}
+
+.plot-filter-btn--active {
+  background: var(--green-900, #0a5c36) !important;
+  color: #ffffff !important;
+  border-color: var(--green-900, #0a5c36) !important;
+  box-shadow: 0 4px 12px rgba(10, 92, 54, 0.25);
+}
+
+.plot-filter-btn__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.plot-filter-btn__dot--avail { background: var(--color-avail); }
+.plot-filter-btn__dot--booked { background: var(--color-booked); }
+.plot-filter-btn__dot--sold { background: var(--color-sold); }
+.plot-filter-btn__dot--blocked { background: var(--color-blocked); }
+
+.plot-filter-btn__count {
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+}
+
+.plot-filter-btn--active .plot-filter-btn__count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Canvas Viewport */
+.plot-viewer__canvas-container {
+  position: relative;
+  width: 100%;
+  height: 620px;
+  overflow: hidden;
+  background: #f8fafc;
+  cursor: grab;
+  touch-action: none;
+}
+
+.plot-viewer__canvas-container:active,
+.plot-viewer__canvas-container--dragging {
+  cursor: grabbing;
+}
+
+/* Loading Overlay */
+.plot-viewer__loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  color: var(--green-900, #0a5c36);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.plot-viewer__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--green-50, #eef6f1);
+  border-top-color: var(--green-900, #0a5c36);
+  border-radius: 50%;
+  animation: pvSpin 0.8s linear infinite;
+}
+
+@keyframes pvSpin {
+  to { transform: rotate(360deg); }
+}
+
+.plot-viewer__error-banner {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  z-index: 50;
+}
+
+/* Map Content Transform Wrapper */
+.plot-viewer__map-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: auto;
+}
+
+/* Container matching viewBox 1056x816 aspect ratio */
+.plot-viewer__map-layers {
+  position: relative;
+  width: 1056px;
+  height: 816px;
+  background: #ffffff;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Background Layout Image */
+.plot-viewer__bg-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+}
+
+/* Overlay Interactive SVG */
+.plot-viewer__overlay-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  overflow: visible;
+}
+
+/* Plot SVG Interactive Elements */
+.pv-plot {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 0.25s ease;
+}
+
+.pv-plot__boundary {
+  transition: fill-opacity 0.2s ease, stroke-width 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Available: Sky Blue */
+.pv-plot--Available .pv-plot__boundary {
+  fill: rgba(var(--color-avail-rgb), 0.45);
+  stroke: #0284c7;
+  stroke-width: 1.8px;
+}
+
+/* Booked: Green */
+.pv-plot--Booked .pv-plot__boundary {
+  fill: rgba(var(--color-booked-rgb), 0.48);
+  stroke: #16a34a;
+  stroke-width: 1.8px;
+}
+
+/* Sold / Registered: Red */
+.pv-plot--Sold .pv-plot__boundary {
+  fill: rgba(var(--color-sold-rgb), 0.48);
+  stroke: #dc2626;
+  stroke-width: 1.8px;
+}
+
+/* Blocked: Orange */
+.pv-plot--Blocked .pv-plot__boundary {
+  fill: rgba(var(--color-blocked-rgb), 0.5);
+  stroke: #ea580c;
+  stroke-width: 1.8px;
+}
+
+/* Plot Hover State */
+.pv-plot:hover .pv-plot__boundary,
+.pv-plot--selected .pv-plot__boundary {
+  stroke-width: 3.2px !important;
+  stroke: #0a5c36 !important;
+  filter: drop-shadow(0 4px 10px rgba(10, 92, 54, 0.3));
+}
+
+.pv-plot--Available:hover .pv-plot__boundary { fill: rgba(var(--color-avail-rgb), 0.8); }
+.pv-plot--Booked:hover .pv-plot__boundary    { fill: rgba(var(--color-booked-rgb), 0.8); }
+.pv-plot--Sold:hover .pv-plot__boundary      { fill: rgba(var(--color-sold-rgb), 0.8); }
+.pv-plot--Blocked:hover .pv-plot__boundary   { fill: rgba(var(--color-blocked-rgb), 0.8); }
+
+/* Dim plots not matching current filter */
+.pv-plot--dimmed {
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+/* Centered Plot Label in SVG */
+.pv-plot__label-bg {
+  fill: #ffffff;
+  stroke-width: 1.5px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: transform 0.2s ease, fill 0.2s ease;
+}
+
+.pv-plot--Available .pv-plot__label-bg { stroke: #0284c7; }
+.pv-plot--Booked .pv-plot__label-bg    { stroke: #16a34a; }
+.pv-plot--Sold .pv-plot__label-bg      { stroke: #dc2626; }
+.pv-plot--Blocked .pv-plot__label-bg   { stroke: #ea580c; }
+
+.pv-plot__label-text {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  fill: #0f172a;
+  pointer-events: none;
+  letter-spacing: -0.02em;
+}
+
+.pv-plot:hover .pv-plot__label-bg,
+.pv-plot--selected .pv-plot__label-bg {
+  fill: var(--green-900, #0a5c36);
+  stroke: #ffffff;
+}
+
+.pv-plot:hover .pv-plot__label-text,
+.pv-plot--selected .pv-plot__label-text {
+  fill: #ffffff;
+}
+
+/* Floating Zoom Controls Toolbar */
+.plot-viewer__controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--pv-surface-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+}
+
+.pv-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--green-50, #eef6f1);
+  border: 1px solid var(--pv-surface-border);
+  border-radius: 8px;
+  color: var(--green-900, #0a5c36);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pv-control-btn:hover {
+  background: var(--green-900, #0a5c36);
+  color: #ffffff;
+}
+
+.pv-control-btn:active {
+  transform: scale(0.92);
+}
+
+.plot-viewer__zoom-level {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--pv-text-muted);
+  padding: 2px 0;
+}
+
+/* Instruction pill bottom-left */
+.plot-viewer__helper-pill {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--pv-surface-border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pv-text-muted);
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  z-index: 20;
+}
+
+/* Floating Hover Tooltip Card */
+.pv-tooltip {
+  position: absolute;
+  z-index: 100;
+  pointer-events: none;
+  transform: translate(-50%, -115%);
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid var(--pv-surface-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(10, 92, 54, 0.16);
+  color: var(--pv-text-main);
+  min-width: 175px;
+  animation: pvTooltipPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, left, top;
+}
+
+@keyframes pvTooltipPop {
+  from { opacity: 0; transform: translate(-50%, -105%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -115%) scale(1); }
+}
+
+.pv-tooltip__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--pv-surface-border);
+}
+
+.pv-tooltip__title {
+  font-family: var(--font-display, var(--font-cormorant, 'Cormorant Garamond', Georgia, serif));
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--green-900, #0a5c36);
+  margin: 0;
+}
+
+.pv-tooltip__status {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.pv-tooltip__status--Available { background: rgba(56, 189, 248, 0.15); color: #0284c7; border: 1px solid #38bdf8; }
+.pv-tooltip__status--Booked    { background: rgba(34, 197, 94, 0.15); color: #16a34a; border: 1px solid #4ade80; }
+.pv-tooltip__status--Sold      { background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid #f87171; }
+.pv-tooltip__status--Blocked   { background: rgba(249, 115, 22, 0.15); color: #ea580c; border: 1px solid #fb923c; }
+
+.pv-tooltip__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  font-size: 0.75rem;
+}
+
+.pv-tooltip__label {
+  color: var(--pv-text-muted);
+}
+
+.pv-tooltip__val {
+  font-weight: 700;
+  color: var(--pv-text-main);
+  text-align: right;
+}
+
+.pv-tooltip__hint {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: var(--green-900, #0a5c36);
+  font-weight: 600;
+  text-align: center;
+  border-top: 1px dashed var(--pv-surface-border);
+  padding-top: 6px;
+}
+
+/* Modal Popup Card (Click) */
+.pv-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 92, 54, 0.4);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 200;
+  animation: pvFadeIn 0.2s ease;
+}
+
+@keyframes pvFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.pv-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border: 1px solid var(--pv-surface-border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 25px 60px -15px rgba(10, 92, 54, 0.25);
+  color: var(--pv-text-main);
+  animation: pvScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pvScaleUp {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.pv-modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--pv-surface-border);
+  background: var(--green-50, #eef6f1);
+  color: var(--pv-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pv-modal-close-btn:hover {
+  background: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
+}
+
+.pv-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding-right: 40px;
+}
+
+.pv-modal__plot-title {
+  font-family: var(--font-display, var(--font-cormorant, 'Cormorant Garamond', Georgia, serif));
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--green-900, #0a5c36);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.pv-modal__project-sub {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: var(--pv-text-muted);
+}
+
+.pv-modal__badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.pv-modal__badge--Available { background: rgba(56, 189, 248, 0.15); color: #0284c7; border: 1px solid #38bdf8; }
+.pv-modal__badge--Booked    { background: rgba(34, 197, 94, 0.15); color: #16a34a; border: 1px solid #4ade80; }
+.pv-modal__badge--Sold      { background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid #f87171; }
+.pv-modal__badge--Blocked   { background: rgba(249, 115, 22, 0.15); color: #ea580c; border: 1px solid #fb923c; }
+
+/* Grid of specs */
+.pv-modal__specs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pv-spec-box {
+  background: var(--green-50, #eef6f1);
+  border: 1px solid var(--pv-surface-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.pv-spec-box__label {
+  font-size: 0.72rem;
+  color: var(--pv-text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.pv-spec-box__val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--pv-text-main);
+}
+
+.pv-spec-box--full {
+  grid-column: span 2;
+  background: #ffffff;
+  border: 2px solid rgba(10, 92, 54, 0.2);
+}
+
+.pv-spec-box--full .pv-spec-box__val {
+  color: var(--green-900, #0a5c36);
+  font-size: 1.4rem;
+}
+
+/* Action CTA Buttons */
+.pv-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Official WhatsApp Button */
+.pv-btn-whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 18px;
+  background: #25D366;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.35);
+}
+
+.pv-btn-whatsapp:hover {
+  background: #20bd5a;
+  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.5);
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
+.pv-btn-whatsapp:active {
+  transform: scale(0.98);
+}
+
+.pv-btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 16px;
+  background: #ffffff;
+  border: 1px solid var(--pv-surface-border);
+  border-radius: 12px;
+  color: var(--pv-text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pv-btn-secondary:hover {
+  background: var(--green-50, #eef6f1);
+  color: var(--green-900, #0a5c36);
+}
+
+/* Footer Status Legend */
+.plot-viewer__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  background: #ffffff;
+  border-top: 1px solid var(--pv-surface-border);
+  font-size: 0.8rem;
+  color: var(--pv-text-muted);
+}
+
+.plot-viewer__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.pv-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pv-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.pv-legend-dot--Available { background: var(--color-avail); }
+.pv-legend-dot--Booked    { background: var(--color-booked); }
+.pv-legend-dot--Sold      { background: var(--color-sold); }
+.pv-legend-dot--Blocked   { background: var(--color-blocked); }
+
+/* Responsive Adjustments down to 320px */
+@media (max-width: 768px) {
+  .plot-viewer__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .plot-viewer__filter-bar {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .plot-viewer__canvas-container {
+    height: 480px;
+  }
+
+  .plot-viewer__helper-pill {
+    display: none;
+  }
+
+  .plot-viewer__footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .plot-viewer__header {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .plot-viewer__title {
+    font-size: clamp(1.1rem, 4.5vw, 1.3rem);
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .plot-viewer__subtitle {
+    font-size: 0.76rem;
+  }
+
+  .plot-viewer__filter-bar {
+    gap: 5px;
+  }
+
+  .plot-filter-btn {
+    padding: 5px 9px;
+    font-size: 0.72rem;
+  }
+
+  .plot-viewer__canvas-container {
+    height: 400px;
+  }
+
+  .pv-modal-card {
+    padding: 18px 14px;
+    max-height: 90vh;
+    border-radius: 16px;
+  }
+
+  .pv-modal__plot-title {
+    font-size: 1.35rem;
+  }
+
+  .pv-spec-box__val {
+    font-size: 0.95rem;
+  }
+
+  .pv-control-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 360px) {
+  .plot-viewer__canvas-container {
+    height: 330px;
+  }
+
+  .pv-modal__specs-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .pv-modal__whatsapp-btn {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+}

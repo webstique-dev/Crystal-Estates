@@ -1,22 +1,33 @@
 'use client'
 
-import { useRef } from 'react'
-import { MapPin, Compass, Ruler, ArrowUpRight, ShieldCheck } from 'lucide-react'
+import { useRef, useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { MapPin, Compass, Ruler, ArrowUpRight, ShieldCheck, Map } from 'lucide-react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
 import { Section, Badge, Button, LeafDecor } from '../ui'
 import { formatPrice } from '../ui/format'
-import { plots, searchOptions } from '../../data/site'
+import { plots as initialStaticPlots, searchOptions } from '../../data/site'
 
 /* Single Plot Card inspired directly by reference image */
-export function PlotCard({ plot, onEnquire }) {
+export function PlotCard({ plot, onEnquire, onViewLayout }) {
   const isAvailable = plot.status === 'Available'
   const isFewLeft = plot.status === 'Few Left'
   const isSoldOut = plot.status === 'Sold Out'
+  const hasLayout = Boolean(plot.hasLayoutMap || plot.name === 'Kolapakkam')
 
   return (
     <div className="plot-card-wrap">
-      <div className="plot-card">
+      <div
+        className={`plot-card ${hasLayout ? 'plot-card--has-layout' : ''}`}
+        onClick={() => {
+          if (hasLayout && onViewLayout) {
+            onViewLayout(plot)
+          }
+        }}
+        style={hasLayout ? { cursor: 'pointer' } : undefined}
+      >
         {/* Plot Image Container */}
         <div className="plot-card__media">
           <img
@@ -27,7 +38,9 @@ export function PlotCard({ plot, onEnquire }) {
           />
           {/* Floating Pill Status Badge */}
           <div className="plot-card__badge-row">
-            <span className={`plot-card__status ${isSoldOut ? 'plot-card__status--sold' : isFewLeft ? 'plot-card__status--warn' : 'plot-card__status--avail'}`}>
+            <span
+              className={`plot-card__status ${isSoldOut ? 'plot-card__status--sold' : isFewLeft ? 'plot-card__status--warn' : 'plot-card__status--avail'}`}
+            >
               <span className="plot-card__status-dot" />
               {isAvailable ? 'Available Plot' : plot.status}
             </span>
@@ -35,6 +48,18 @@ export function PlotCard({ plot, onEnquire }) {
               <ShieldCheck size={12} /> {plot.approval}
             </span>
           </div>
+
+          {/* Interactive Layout Map Badge */}
+          {hasLayout && (
+            <Link
+              href="/layout-viewer"
+              onClick={(e) => e.stopPropagation()}
+              className="plot-card__layout-pill"
+              style={{ textDecoration: 'none' }}
+            >
+              <Map size={12} /> Interactive Map
+            </Link>
+          )}
         </div>
 
         {/* Plot Information Body */}
@@ -66,16 +91,44 @@ export function PlotCard({ plot, onEnquire }) {
 
           {/* Action Row */}
           <div className="plot-card__footer">
-            <Button
-              size="sm"
-              variant={isSoldOut ? 'outline' : 'primary'}
-              disabled={isSoldOut}
-              onClick={() => onEnquire(plot)}
-              className="plot-card__cta-btn"
-              style={isSoldOut ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-            >
-              {isSoldOut ? 'Sold Out' : 'Enquire Now'} <ArrowUpRight size={15} />
-            </Button>
+            {hasLayout ? (
+              <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+                <Link
+                  href="/layout-viewer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="btn btn--primary btn--sm plot-card__cta-btn"
+                  style={{ flex: 1.2, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Map size={14} style={{ marginRight: 4 }} /> View Layout SVG
+                </Link>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEnquire(plot)
+                  }}
+                  className="plot-card__cta-btn"
+                  style={{ flex: 0.8 }}
+                >
+                  Enquire <ArrowUpRight size={13} />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant={isSoldOut ? 'outline' : 'primary'}
+                disabled={isSoldOut}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEnquire(plot)
+                }}
+                className="plot-card__cta-btn"
+                style={isSoldOut ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+              >
+                {isSoldOut ? 'Sold Out' : 'Enquire Now'} <ArrowUpRight size={15} />
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -85,20 +138,45 @@ export function PlotCard({ plot, onEnquire }) {
 
 export default function Plots({ filters, onEnquire, onReset }) {
   const sectionRef = useRef(null)
+  const router = useRouter()
+  const [dbPlots, setDbPlots] = useState(initialStaticPlots)
+
+  // Fetch plot details dynamically from MongoDB
+  useEffect(() => {
+    let isMounted = true
+    fetch('/api/plots')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success && data.plots?.length > 0) {
+          setDbPlots(data.plots)
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch plots from MongoDB API, using local fallback:', err.message)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   const size = searchOptions.sizes[filters.size] || { min: 0, max: Infinity }
   const budget = searchOptions.budgets[filters.budget] || { min: 0, max: Infinity }
-  
+
   const hasFilter = Boolean(filters.location || filters.size > 0 || filters.budget > 0)
 
-  // Filter matching plots from the existing data source
-  const filtered = plots.filter((p) =>
-    (!filters.location || p.location === filters.location) &&
-    p.area >= size.min && p.area <= size.max &&
-    p.price <= budget.max && p.price >= (budget.min ?? 0),
+  // Filter matching plots
+  const filtered = dbPlots.filter(
+    (p) =>
+      (!filters.location || p.location === filters.location) &&
+      p.area >= size.min &&
+      p.area <= size.max &&
+      p.price <= budget.max &&
+      p.price >= (budget.min ?? 0),
   )
 
   // Exactly 4 plot cards featured by default or when available
-  const displayList = hasFilter ? filtered : plots.slice(0, 4)
+  const displayList = hasFilter ? filtered : dbPlots.slice(0, 4)
 
   useGSAP(
     () => {
@@ -133,6 +211,10 @@ export default function Plots({ filters, onEnquire, onReset }) {
     { scope: sectionRef, dependencies: [displayList.length] },
   )
 
+  const handleOpenLayout = () => {
+    router.push('/layout-viewer')
+  }
+
   return (
     <Section id="plots" className="plots-sec" ref={sectionRef}>
       <LeafDecor variant="laurel" className="plots-sec__leaf" opacity={0.05} style={{ top: 20, right: 20 }} />
@@ -150,10 +232,29 @@ export default function Plots({ filters, onEnquire, onReset }) {
           <p className="plots-sec__desc">
             Explore our handpicked, approved residential layouts in the most sought-after prime locations across West Chennai. Every plot is legally vetted and ready for registration.
           </p>
+          <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Link
+              href="/layout-viewer"
+              className="btn btn--primary btn--sm"
+              style={{
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontWeight: 700,
+                boxShadow: '0 4px 14px rgba(10, 92, 54, 0.3)',
+                cursor: 'pointer',
+              }}
+            >
+              <Map size={15} /> Explore Interactive Layout Map
+            </Link>
+          </div>
           {hasFilter && (
             <div className="plots-sec__filter-info">
               <span>Showing filtered results ({displayList.length})</span>
-              <button onClick={onReset} className="plots-sec__reset-btn">Reset Filters</button>
+              <button onClick={onReset} className="plots-sec__reset-btn">
+                Reset Filters
+              </button>
             </div>
           )}
         </div>
@@ -163,7 +264,12 @@ export default function Plots({ filters, onEnquire, onReset }) {
       {displayList.length > 0 ? (
         <div className="plots-grid">
           {displayList.map((p) => (
-            <PlotCard key={p.id} plot={p} onEnquire={onEnquire} />
+            <PlotCard
+              key={p.id}
+              plot={p}
+              onEnquire={onEnquire}
+              onViewLayout={handleOpenLayout}
+            />
           ))}
         </div>
       ) : (
@@ -177,3 +283,4 @@ export default function Plots({ filters, onEnquire, onReset }) {
     </Section>
   )
 }
+

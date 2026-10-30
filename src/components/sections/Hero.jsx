@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { ArrowUpRight, Search, ShieldCheck, CheckCircle2 } from 'lucide-react'
+import { ArrowUpRight, Search, ShieldCheck, CheckCircle2, Sparkles, Map } from 'lucide-react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
 import { Container, Button, Field, LeafDecor } from '../ui'
@@ -19,7 +19,7 @@ export default function Hero({ onSearch }) {
     document.getElementById('plots')?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // GSAP Entrance Timeline for the Hero Section
+  // Refined GSAP Entrance Timeline
   useGSAP(
     () => {
       if (isReducedMotion()) return
@@ -27,40 +27,30 @@ export default function Hero({ onSearch }) {
       const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
 
       tl.from('.hero-ref__bg-img', {
-        scale: 1.08,
-        opacity: 0.8,
-        duration: 1.1,
+        scale: 1.06,
+        opacity: 0.85,
+        duration: 1.0,
       })
         .from(
-          '.hero-ref__top-bar',
+          '.hero-ref__eyebrow',
           {
-            y: -16,
+            y: -14,
             opacity: 0,
-            duration: 0.6,
+            duration: 0.5,
           },
-          '-=0.8',
+          '-=0.7',
         )
         .from(
           '.hero-ref__title',
           {
-            y: 28,
+            y: 24,
             opacity: 0,
             duration: 0.7,
           },
           '-=0.5',
         )
         .from(
-          '.hero-ref__stat-card',
-          {
-            y: 20,
-            opacity: 0,
-            stagger: 0.12,
-            duration: 0.6,
-          },
-          '-=0.5',
-        )
-        .from(
-          '.hero-ref__bottom-row',
+          '.hero-ref__lead',
           {
             y: 14,
             opacity: 0,
@@ -69,11 +59,29 @@ export default function Hero({ onSearch }) {
           '-=0.4',
         )
         .from(
+          '.hero-ref__cta-group',
+          {
+            y: 14,
+            opacity: 0,
+            duration: 0.5,
+          },
+          '-=0.3',
+        )
+        .from(
+          '.hero-ref__highlights',
+          {
+            y: 12,
+            opacity: 0,
+            duration: 0.5,
+          },
+          '-=0.3',
+        )
+        .from(
           '.hero-search',
           {
-            y: 20,
+            y: 18,
             opacity: 0,
-            duration: 0.7,
+            duration: 0.6,
           },
           '-=0.3',
         )
@@ -86,7 +94,7 @@ export default function Hero({ onSearch }) {
       <LeafDecor variant="branch" className="hero-ref__leaf hero-ref__leaf--top-right" opacity={0.08} />
 
       <Container className="hero-ref__container">
-        {/* Main Immersive Hero Card inspired directly by reference image */}
+        {/* Simple, Neat & Clean Architectural Hero Card */}
         <div className="hero-ref__frame">
           <img
             src="/images/hero-estate.jpg"
@@ -97,69 +105,52 @@ export default function Hero({ onSearch }) {
           />
           <div className="hero-ref__gradient-overlay" />
 
-          {/* 1. Top Bar: Sub-headline, Badges & Micro info (Completely separated from title) */}
-          <div className="hero-ref__top-bar">
-            <div className="hero-ref__tagline">
-              <div className="hero-ref__pill-group">
-                <span className="hero-ref__micro">SINCE 2014</span>
-                <span className="hero-ref__pill-accent">WEST CHENNAI</span>
-              </div>
-              <h2 className="hero-ref__subtitle">
-                UPGRADE YOUR FUTURE WITH APPROVED RESIDENTIAL PLOTS
-              </h2>
-              <p className="hero-ref__lead">
-                Transparent documentation, DTCP & CMDA approved land with clear marketable titles.
-              </p>
+          {/* Centered, Uncluttered Hero Content */}
+          <div className="hero-ref__content">
+            <div className="hero-ref__eyebrow">
+              <Sparkles size={13} className="hero-ref__eyebrow-icon" />
+              <span>DTCP & CMDA Approved • West Chennai</span>
             </div>
 
-            <div className="hero-ref__top-right">
-              <span className="hero-ref__badge">Security For Living</span>
-            </div>
-          </div>
+            <h1 className="hero-ref__title">
+              Plots You Can Trust.<br />
+              Land to Build Your Future On.
+            </h1>
 
-          {/* 2. Middle Body: Grand Architectural Display Title & Non-colliding Stats */}
-          <div className="hero-ref__center-content">
-            <div className="hero-ref__title-box">
-              <h1 className="hero-ref__title">
-                CRYSTAL ESTATES
-              </h1>
-            </div>
+            <p className="hero-ref__lead">
+              Clear marketable titles, transparent documentation, and guided site visits across prime West Chennai locations including Kolapakkam, Somamangalam & Brammadesam.
+            </p>
 
-            {/* Floating Stat Badges placed in their dedicated right-hand zone */}
-            <div className="hero-ref__stats-cluster">
-              <div className="hero-ref__stat-card hero-ref__stat-card--top">
-                <span className="hero-ref__stat-val">100%</span>
-                <p className="hero-ref__stat-txt">
-                  Clear & verified titles with encumbrance checks.
-                </p>
-              </div>
-
-              <div className="hero-ref__stat-card hero-ref__stat-card--bottom">
-                <span className="hero-ref__stat-val">500+</span>
-                <p className="hero-ref__stat-txt">
-                  Happy families successfully building their dream homes.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Bottom Row: Left Meta, Center Floating CTA, Right Meta */}
-          <div className="hero-ref__bottom-row">
-            <div className="hero-ref__bottom-meta hero-ref__bottom-meta--left">
-              <span>Verified Clear-Title Plots</span>
-            </div>
-
-            <div className="hero-ref__bottom-cta">
-              <a href="#plots" className="hero-ref__discover-btn">
+            <div className="hero-ref__cta-group">
+              <a href="#plots" className="hero-ref__primary-btn">
                 <span>DISCOVER PLOTS</span>
-                <span className="hero-ref__discover-icon">
-                  <ArrowUpRight size={16} />
+                <span className="hero-ref__btn-icon">
+                  <ArrowUpRight size={15} />
                 </span>
               </a>
-            </div>
 
-            <div className="hero-ref__bottom-meta hero-ref__bottom-meta--right">
-              <span>Welcome to Crystal Estates</span>
+              <a href="/layout-viewer" className="hero-ref__secondary-btn">
+                <Map size={15} />
+                <span>Interactive Layout Map</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Simple, Neat Trust Highlights at bottom */}
+          <div className="hero-ref__highlights">
+            <div className="hero-ref__highlight-item">
+              <span className="hero-ref__highlight-val">100%</span>
+              <span className="hero-ref__highlight-label">Clear Titles</span>
+            </div>
+            <div className="hero-ref__highlight-sep" />
+            <div className="hero-ref__highlight-item">
+              <span className="hero-ref__highlight-val">500+</span>
+              <span className="hero-ref__highlight-label">Happy Families</span>
+            </div>
+            <div className="hero-ref__highlight-sep" />
+            <div className="hero-ref__highlight-item">
+              <span className="hero-ref__highlight-val">Since 2014</span>
+              <span className="hero-ref__highlight-label">Verified Experience</span>
             </div>
           </div>
         </div>

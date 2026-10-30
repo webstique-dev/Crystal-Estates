@@ -24,3 +24,16 @@ out
 *.njsproj
 *.sln
 *.sw?
+
+# Tests and test scripts
+scripts/test*
+scripts/debug*
+scripts/inspect*
+scripts/capture*
+test/
+tests/
+__tests__/
+*.test.*
+*.spec.*
+coverage/
+
