@@ -1,119 +1,305 @@
 /* ==========================================================================
-   Layout Viewer & Plot Management Page Styles (Template Theme Based)
+   Layout Viewer Dedicated Application Styles
    Crystal Estates - Light Emerald Luxury Palette
    ========================================================================== */
 
-.lv-page {
+.lv-app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg, #f9fbf9);
   color: var(--ink, #111e16);
-  padding: 100px 0 80px; /* offset for fixed navbar */
   font-family: var(--font-body, var(--font-inter, 'Inter', system-ui, sans-serif));
+}
+
+/* ── Top Dedicated App Navigation Bar ── */
+.lv-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line, #e3ece6);
+  box-shadow: 0 2px 14px rgba(10, 92, 54, 0.05);
+}
+
+.lv-topbar__inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 10px clamp(12px, 2.5vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.lv-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.lv-topbar__brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.lv-topbar__logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.lv-topbar__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--line, #e3ece6);
+}
+
+.lv-topbar__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green-900, #0a5c36);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--green-50, #eef6f1);
+  border: 1px solid rgba(10, 92, 54, 0.15);
+  transition: all 0.2s ease;
+}
+
+.lv-topbar__back-btn:hover {
+  background: var(--green-900, #0a5c36);
+  color: #ffffff;
+  transform: translateX(-2px);
+}
+
+.lv-topbar__project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lv-topbar__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(14, 122, 72, 0.12);
+  color: var(--green-900, #0a5c36);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.lv-topbar__project-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink, #111e16);
+}
+
+.lv-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lv-book-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  border-radius: 999px;
+  background: var(--gold, #b8964e);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(184, 150, 78, 0.25);
+  transition: all 0.2s ease;
+}
+
+.lv-book-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* ── Statusbar ── */
+.lv-statusbar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--line, #e3ece6);
+  padding: 8px 0;
+}
+
+.lv-statusbar__inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 clamp(12px, 2.5vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.lv-statusbar__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--muted, #4e6355);
+}
+
+.lv-statusbar__icon {
+  color: var(--green-900, #0a5c36);
+  flex-shrink: 0;
+}
+
+.lv-statusbar__loc {
+  font-weight: 600;
+}
+
+.lv-statusbar__dot {
+  color: var(--line, #ccd8d0);
+}
+
+.lv-statusbar__code {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background: var(--green-50, #eef6f1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--green-900, #0a5c36);
+}
+
+.lv-statusbar__chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: #f4f7f4;
+  color: var(--ink, #111e16);
+  border: 1px solid var(--line, #e3ece6);
+}
+
+.lv-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lv-chip-dot--avail { background: #38bdf8; }
+.lv-chip-dot--booked { background: #10b981; }
+.lv-chip-dot--sold { background: #ef4444; }
+.lv-chip-dot--blocked { background: #f97316; }
+
+/* ── Main Workspace ── */
+.lv-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.lv-viewer-wrap {
+  flex: 1;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: clamp(10px, 2vw, 20px) clamp(12px, 2.5vw, 24px);
+  box-sizing: border-box;
+}
+
+.lv-manage-wrap {
+  padding-top: 24px;
+  padding-bottom: 40px;
+}
+
+/* ── Sleek Compact App Footer ── */
+.lv-app-footer {
+  margin-top: auto;
+  background: #ffffff;
+  border-top: 1px solid var(--line, #e3ece6);
+  padding: 14px 0;
+  font-size: 0.8rem;
+  color: var(--muted, #4e6355);
+}
+
+.lv-app-footer__inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 clamp(12px, 2.5vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.lv-app-footer__left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lv-app-footer__sep {
+  color: var(--line, #ccd8d0);
+}
+
+.lv-app-footer__sync {
+  color: #059669;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.lv-app-footer__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lv-app-footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--green-900, #0a5c36);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.lv-app-footer__link:hover {
+  color: var(--gold, #b8964e);
 }
 
 .lv-container {
   width: 100%;
-  max-width: 1240px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 clamp(12px, 3vw, 24px);
   box-sizing: border-box;
 }
 
-/* Top Navigation Bar */
-.lv-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-bottom: 28px;
-}
-
-.lv-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--green-900, #0a5c36);
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 0.88rem;
-  padding: 8px 18px;
-  border-radius: 999px;
-  background: #ffffff;
-  border: 1px solid var(--line, #e3ece6);
-  box-shadow: 0 2px 8px rgba(10, 92, 54, 0.05);
-  transition: all 0.2s ease;
-}
-
-.lv-back-btn:hover {
-  background: var(--green-50, #eef6f1);
-  border-color: var(--green-700, #0e7a48);
-  transform: translateX(-3px);
-}
-
-.lv-location-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted, #4e6355);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-/* Page Hero Header */
-.lv-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.lv-header__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--green-50, #eef6f1);
-  color: var(--green-900, #0a5c36);
-  border: 1px solid rgba(10, 92, 54, 0.2);
-  border-radius: 999px;
-  padding: 4px 14px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 12px;
-}
-
-.lv-header__title {
-  color: var(--ink, #111e16);
-  font-family: var(--font-display, var(--font-cormorant, 'Cormorant Garamond', Georgia, serif));
-  font-size: clamp(1.85rem, 4vw, 3rem);
-  font-weight: 700;
-  margin: 0 0 10px;
-  letter-spacing: -0.01em;
-}
-
-.lv-header__desc {
-  color: var(--muted, #4e6355);
-  max-width: 640px;
-  margin: 0 auto;
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-
-/* Toolbar & Action Controls */
-.lv-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding: 12px 18px;
-  background: #ffffff;
-  border: 1px solid var(--line, #e3ece6);
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(10, 92, 54, 0.04);
-}
-
+/* Legacy & Shared Button / Tabs Classes */
 .lv-tabs {
   display: flex;
   align-items: center;
@@ -128,15 +314,83 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 7px 14px;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
   font-weight: 700;
   cursor: pointer;
   background: transparent;
   color: var(--muted, #4e6355);
   border: none;
   transition: all 0.2s ease;
+}
+
+.lv-tab-btn:hover {
+  color: var(--ink, #111e16);
+}
+
+.lv-tab-btn--active {
+  background: var(--green-900, #0a5c36);
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(10, 92, 54, 0.2);
+}
+
+.lv-tab-count {
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
+.lv-tab-btn--active .lv-tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.lv-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lv-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--green-900, #0a5c36);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 3px 10px rgba(10, 92, 54, 0.2);
+  transition: all 0.2s ease;
+}
+
+.lv-add-btn:hover {
+  background: var(--green-700, #0e7a48);
+  transform: translateY(-1px);
+}
+
+.lv-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line, #e3ece6);
+  color: var(--muted, #4e6355);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lv-action-btn:hover {
+  color: var(--green-900, #0a5c36);
+  border-color: var(--green-900, #0a5c36);
 }
 
 .lv-tab-btn:hover {
@@ -519,39 +773,77 @@
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
-/* Responsive down to 320px */
-@media (max-width: 640px) {
-  .lv-page {
-    padding: 85px 0 60px;
+/* Responsive Utility Classes */
+@media (max-width: 900px) {
+  .lv-hide-tablet {
+    display: none !important;
   }
-  .lv-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 10px;
+}
+
+@media (max-width: 640px) {
+  .lv-hide-mobile {
+    display: none !important;
+  }
+  .lv-topbar__inner {
+    padding: 8px 12px;
     gap: 10px;
   }
+  .lv-topbar__left {
+    gap: 8px;
+  }
+  .lv-topbar__logo {
+    height: 28px;
+  }
+  .lv-topbar__back-btn {
+    padding: 5px 10px;
+    font-size: 0.76rem;
+  }
+  .lv-topbar__right {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
   .lv-tabs {
+    flex: 1;
+    min-width: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    width: 100%;
     gap: 4px;
     box-sizing: border-box;
   }
   .lv-tab-btn {
     width: 100%;
     justify-content: center;
-    padding: 8px 6px;
-    font-size: 0.78rem;
+    padding: 7px 4px;
+    font-size: 0.74rem;
     white-space: nowrap;
   }
   .lv-actions {
-    width: 100%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   .lv-add-btn {
+    padding: 7px 10px;
+    font-size: 0.78rem;
+  }
+  .lv-action-btn {
+    width: 30px;
+    height: 30px;
+  }
+  .lv-statusbar__inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 12px;
+  }
+  .lv-statusbar__chips {
     width: 100%;
-    justify-content: center;
-    padding: 10px 14px;
-    font-size: 0.82rem;
+    gap: 6px;
   }
   .lv-grid-2 {
     grid-template-columns: 1fr;
@@ -567,43 +859,16 @@
   .lv-stat-val {
     font-size: 1.35rem;
   }
-}
-
-@media (max-width: 360px) {
-  .lv-tab-btn {
-    padding: 7px 4px;
-    font-size: 0.74rem;
-    gap: 4px;
-  }
-  .lv-tab-count {
-    padding: 1px 5px;
-    font-size: 0.68rem;
+  .lv-app-footer__inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 }
 
 @media (max-width: 480px) {
-  .lv-nav {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .lv-back-btn {
-    padding: 6px 14px;
-    font-size: 0.8rem;
-  }
-  .lv-location-badge {
-    font-size: 0.76rem;
-  }
-  .lv-header__eyebrow {
-    font-size: 0.68rem;
-    padding: 3px 10px;
-  }
-  .lv-header__title {
-    font-size: clamp(1.65rem, 6.5vw, 2.2rem);
-  }
-  .lv-header__desc {
-    font-size: 0.85rem;
-    line-height: 1.5;
+  .lv-hide-xs {
+    display: none !important;
   }
   .lv-modal-backdrop {
     padding: 8px;
@@ -631,5 +896,27 @@
     width: 100%;
     text-align: center;
     padding: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .lv-topbar__inner {
+    padding: 6px 8px;
+  }
+  .lv-topbar__logo {
+    height: 24px;
+  }
+  .lv-tab-btn {
+    padding: 6px 4px;
+    font-size: 0.72rem;
+    gap: 4px;
+  }
+  .lv-tab-count {
+    padding: 1px 4px;
+    font-size: 0.65rem;
+  }
+  .lv-chip {
+    font-size: 0.7rem;
+    padding: 2px 7px;
   }
 }

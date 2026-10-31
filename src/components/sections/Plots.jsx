@@ -2,144 +2,94 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { MapPin, Compass, Ruler, ArrowUpRight, ShieldCheck, Map } from 'lucide-react'
+import { MapPin, ArrowUpRight, Map, Sparkles, Download, Calendar, CheckCircle2 } from 'lucide-react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
-import { Section, Badge, Button, LeafDecor } from '../ui'
+import { Section, SectionHeading, LeafDecor } from '../ui'
 import { formatPrice } from '../ui/format'
-import { plots as initialStaticPlots, searchOptions } from '../../data/site'
+import { projects as staticProjects } from '../../data/site'
 
-/* Single Plot Card inspired directly by reference image */
-export function PlotCard({ plot, onEnquire, onViewLayout }) {
-  const isAvailable = plot.status === 'Available'
+const categories = ['All', 'Farm Lands', 'Residential Plots']
+
+export function PlotCard({ plot, onEnquire }) {
+  const isAvailable = plot.status === 'Available' || plot.status === 'Booking Open'
   const isFewLeft = plot.status === 'Few Left'
   const isSoldOut = plot.status === 'Sold Out'
   const hasLayout = Boolean(plot.hasLayoutMap || plot.name === 'Kolapakkam')
 
   return (
-    <div className="plot-card-wrap">
-      <div
-        className={`plot-card ${hasLayout ? 'plot-card--has-layout' : ''}`}
-        onClick={() => {
-          if (hasLayout && onViewLayout) {
-            onViewLayout(plot)
-          }
-        }}
-        style={hasLayout ? { cursor: 'pointer' } : undefined}
-      >
-        {/* Plot Image Container */}
-        <div className="plot-card__media">
-          <img
-            src={plot.image || '/images/plot-1.jpg'}
-            alt={`${plot.name} residential plot in ${plot.location}`}
-            className="plot-card__img"
-            loading="lazy"
-          />
-          {/* Floating Pill Status Badge */}
-          <div className="plot-card__badge-row">
-            <span
-              className={`plot-card__status ${isSoldOut ? 'plot-card__status--sold' : isFewLeft ? 'plot-card__status--warn' : 'plot-card__status--avail'}`}
-            >
-              <span className="plot-card__status-dot" />
-              {isAvailable ? 'Available Plot' : plot.status}
-            </span>
-            <span className="plot-card__approval-badge">
-              <ShieldCheck size={12} /> {plot.approval}
-            </span>
-          </div>
+    <div className="gallery-card plot-gallery-card">
+      {/* Media with Category and Status Badges */}
+      <div className="gallery-card__media">
+        <img
+          src={plot.image || '/images/plot-1.jpg'}
+          alt={`${plot.name} ${plot.type || 'plot'} in ${plot.location}`}
+          className="gallery-card__img"
+          loading="lazy"
+        />
+        <span className="gallery-card__category">{plot.approval || plot.type}</span>
+        <span className={`plot-gallery-card__status ${isSoldOut ? 'plot-gallery-card__status--sold' : isFewLeft ? 'plot-gallery-card__status--warn' : 'plot-gallery-card__status--avail'}`}>
+          <span className="plot-gallery-card__dot" />
+          {isAvailable ? 'Available' : plot.status}
+        </span>
+      </div>
 
-          {/* Interactive Layout Map Badge */}
-          {hasLayout && (
-            <Link
-              href="/layout-viewer"
-              onClick={(e) => e.stopPropagation()}
-              className="plot-card__layout-pill"
-              style={{ textDecoration: 'none' }}
-            >
-              <Map size={12} /> Interactive Map
-            </Link>
-          )}
+      {/* Card Info matching Gallery card layout */}
+      <div className="gallery-card__info plot-gallery-card__info">
+        <div className="plot-gallery-card__title-row">
+          <h4 className="gallery-card__title plot-gallery-card__title">{plot.name}</h4>
+          <span className="plot-gallery-card__price">
+            {plot.priceDisplay || formatPrice(plot.price)}
+          </span>
         </div>
 
-        {/* Plot Information Body */}
-        <div className="plot-card__body">
-          <div className="plot-card__header-row">
-            <div>
-              <h3 className="plot-card__title">{plot.name}</h3>
-              <p className="plot-card__location">
-                <MapPin size={14} /> {plot.location}, Chennai
-              </p>
-            </div>
-            <div className="plot-card__price-box">
-              <span className="plot-card__price-label">Starting at</span>
-              <span className="plot-card__price-val">{formatPrice(plot.price)}</span>
-            </div>
-          </div>
+        <p className="gallery-card__caption plot-gallery-card__specs">
+          {plot.location}, Chennai • {typeof plot.area === 'number' ? `${plot.area.toLocaleString('en-IN')} sq.ft` : plot.area}
+          {plot.facing ? ` • ${plot.facing} facing` : (plot.plotSizes ? ` • ${plot.plotSizes}` : '')}
+        </p>
 
-          {/* Specifications Pills */}
-          <div className="plot-card__specs">
-            <Badge tone="soft">
-              <Ruler size={13} style={{ display: 'inline', marginRight: 4 }} />
-              {plot.area.toLocaleString('en-IN')} sq.ft
-            </Badge>
-            <Badge tone="soft">
-              <Compass size={13} style={{ display: 'inline', marginRight: 4 }} />
-              {plot.facing} facing
-            </Badge>
-          </div>
-
-          {/* Action Row */}
-          <div className="plot-card__footer">
-            {hasLayout ? (
-              <div style={{ display: 'flex', gap: 8, width: '100%' }}>
-                <Link
-                  href="/layout-viewer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="btn btn--primary btn--sm plot-card__cta-btn"
-                  style={{ flex: 1.2, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <Map size={14} style={{ marginRight: 4 }} /> View Layout SVG
-                </Link>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onEnquire(plot)
-                  }}
-                  className="plot-card__cta-btn"
-                  style={{ flex: 0.8 }}
-                >
-                  Enquire <ArrowUpRight size={13} />
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                variant={isSoldOut ? 'outline' : 'primary'}
-                disabled={isSoldOut}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onEnquire(plot)
-                }}
-                className="plot-card__cta-btn"
-                style={isSoldOut ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+        {/* Clean, Uncluttered CTA Row */}
+        <div className="plot-gallery-card__actions">
+          {hasLayout ? (
+            <>
+              <Link
+                href="/layout-viewer"
+                className="btn btn--primary btn--sm plot-gallery-card__btn-main"
               >
-                {isSoldOut ? 'Sold Out' : 'Enquire Now'} <ArrowUpRight size={15} />
-              </Button>
-            )}
-          </div>
+                <Map size={14} /> View Layout Map
+              </Link>
+              <button
+                type="button"
+                onClick={() => onEnquire(plot)}
+                className="btn btn--outline btn--sm plot-gallery-card__btn-sub"
+              >
+                Enquire
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              disabled={isSoldOut}
+              onClick={() => onEnquire(plot)}
+              className="btn btn--primary btn--sm btn--block"
+              style={isSoldOut ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+            >
+              {isSoldOut ? 'Sold Out' : 'Enquire Now'} <ArrowUpRight size={14} />
+            </button>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-export default function Plots({ filters, onEnquire, onReset }) {
+export default function Plots({ filters = {}, onEnquire, onReset }) {
   const sectionRef = useRef(null)
-  const router = useRouter()
-  const [dbPlots, setDbPlots] = useState(initialStaticPlots)
+  const [dbPlots, setDbPlots] = useState(staticProjects)
+  const [activeTab, setActiveTab] = useState('All')
+  const [downloadModal, setDownloadModal] = useState(false)
+  const [brochureLead, setBrochureLead] = useState({ name: '', phone: '' })
+  const [brochureDownloaded, setBrochureDownloaded] = useState(false)
 
   // Fetch plot details dynamically from MongoDB
   useEffect(() => {
@@ -148,7 +98,9 @@ export default function Plots({ filters, onEnquire, onReset }) {
       .then((res) => res.json())
       .then((data) => {
         if (isMounted && data.success && data.plots?.length > 0) {
-          setDbPlots(data.plots)
+          const flagship = staticProjects.find((p) => p.isFlagship)
+          const merged = flagship ? [flagship, ...data.plots.filter((p) => !p.isFlagship)] : data.plots
+          setDbPlots(merged)
         }
       })
       .catch((err) => {
@@ -160,127 +112,268 @@ export default function Plots({ filters, onEnquire, onReset }) {
     }
   }, [])
 
-  const size = searchOptions.sizes[filters.size] || { min: 0, max: Infinity }
-  const budget = searchOptions.budgets[filters.budget] || { min: 0, max: Infinity }
+  const flagshipProject = dbPlots.find((p) => p.isFlagship) || staticProjects[0]
+  const residentialPlots = dbPlots.filter((p) => !p.isFlagship)
 
-  const hasFilter = Boolean(filters.location || filters.size > 0 || filters.budget > 0)
+  // Filter based on active tab
+  let displayList = residentialPlots
+  if (activeTab === 'Farm Lands') {
+    displayList = flagshipProject ? [flagshipProject] : []
+  } else if (activeTab === 'Residential Plots') {
+    displayList = residentialPlots
+  }
 
-  // Filter matching plots
-  const filtered = dbPlots.filter(
-    (p) =>
-      (!filters.location || p.location === filters.location) &&
-      p.area >= size.min &&
-      p.area <= size.max &&
-      p.price <= budget.max &&
-      p.price >= (budget.min ?? 0),
-  )
-
-  // Exactly 4 plot cards featured by default or when available
-  const displayList = hasFilter ? filtered : dbPlots.slice(0, 4)
+  // Filter based on search props if provided
+  if (filters?.location) {
+    displayList = displayList.filter((p) => p.location.toLowerCase().includes(filters.location.toLowerCase()))
+  }
 
   useGSAP(
     () => {
       if (isReducedMotion()) return
 
-      gsap.from('.plots-sec__header > *', {
+      gsap.from('.plots-sec .heading', {
         scrollTrigger: {
-          trigger: '.plots-sec__header',
+          trigger: '.plots-sec .heading',
           start: 'top 85%',
           toggleActions: 'play none none none',
         },
         y: 25,
         opacity: 0,
-        stagger: 0.1,
         duration: 0.7,
         ease: 'power3.out',
       })
 
-      gsap.from('.plot-card-wrap', {
+      gsap.from('.plots-tab-bar', {
         scrollTrigger: {
-          trigger: '.plots-grid',
+          trigger: '.plots-tab-bar',
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+        y: 15,
+        opacity: 0,
+        duration: 0.6,
+        ease: 'power3.out',
+      })
+
+      gsap.from('.plot-gallery-card', {
+        scrollTrigger: {
+          trigger: '.plots-gallery-grid',
           start: 'top 82%',
           toggleActions: 'play none none none',
         },
-        y: 35,
+        y: 30,
         opacity: 0,
-        stagger: 0.12,
-        duration: 0.8,
+        stagger: 0.08,
+        duration: 0.7,
         ease: 'power3.out',
       })
     },
-    { scope: sectionRef, dependencies: [displayList.length] },
+    { scope: sectionRef, dependencies: [displayList.length, activeTab] },
   )
 
-  const handleOpenLayout = () => {
-    router.push('/layout-viewer')
+  const handleBrochureSubmit = (e) => {
+    e.preventDefault()
+    setBrochureDownloaded(true)
+    setTimeout(() => {
+      setDownloadModal(false)
+      setBrochureDownloaded(false)
+      window.open('/images/vedanthangal.jpg', '_blank')
+    }, 1500)
   }
 
   return (
-    <Section id="plots" className="plots-sec" ref={sectionRef}>
+    <Section id="projects" className="plots-sec" ref={sectionRef}>
+      <span id="plots" style={{ position: 'relative', top: '-100px', visibility: 'hidden' }} />
       <LeafDecor variant="laurel" className="plots-sec__leaf" opacity={0.05} style={{ top: 20, right: 20 }} />
 
-      {/* Header Row: Left Title, Right Description matching reference layout */}
-      <div className="plots-sec__header">
-        <div>
-          <span className="eyebrow">Available Plots</span>
-          <h2 className="plots-sec__title">
-            Find Your Dream Plot<br />
-            Today
-          </h2>
-        </div>
-        <div className="plots-sec__desc-box">
-          <p className="plots-sec__desc">
-            Explore our handpicked, approved residential layouts in the most sought-after prime locations across West Chennai. Every plot is legally vetted and ready for registration.
-          </p>
-          <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <Link
-              href="/layout-viewer"
-              className="btn btn--primary btn--sm"
-              style={{
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                fontWeight: 700,
-                boxShadow: '0 4px 14px rgba(10, 92, 54, 0.3)',
-                cursor: 'pointer',
-              }}
-            >
-              <Map size={15} /> Explore Interactive Layout Map
-            </Link>
-          </div>
-          {hasFilter && (
-            <div className="plots-sec__filter-info">
-              <span>Showing filtered results ({displayList.length})</span>
-              <button onClick={onReset} className="plots-sec__reset-btn">
-                Reset Filters
-              </button>
+      {/* Flagship Featured Project Spotlight */}
+      {flagshipProject && (
+        <div className="flagship-card">
+          <div className="flagship-card__grid">
+            <div className="flagship-card__media">
+              <img
+                src={flagshipProject.image || '/images/vedanthangal.jpg'}
+                alt={flagshipProject.name}
+                className="flagship-card__img"
+                loading="eager"
+              />
+              <div className="flagship-card__badge-tag">
+                <Sparkles size={14} /> Flagship Farm Land • 15 Acres
+              </div>
             </div>
-          )}
+
+            <div className="flagship-card__content">
+              <div className="flagship-card__header">
+                <span className="eyebrow" style={{ marginBottom: 6 }}>Featured Project</span>
+                <h3 className="flagship-card__title">{flagshipProject.name}</h3>
+                <p className="flagship-card__location">
+                  <MapPin size={15} /> {flagshipProject.location}
+                </p>
+              </div>
+
+              <p className="flagship-card__desc">
+                {flagshipProject.description}
+              </p>
+
+              {/* Highlights List */}
+              <div className="flagship-card__highlights">
+                {flagshipProject.highlights?.map((h, i) => (
+                  <div key={i} className="flagship-card__highlight-item">
+                    <CheckCircle2 size={14} className="flagship-card__check" />
+                    <span>{h}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flagship-card__actions">
+                <button
+                  type="button"
+                  onClick={() => setDownloadModal(true)}
+                  className="btn btn--gold btn--sm"
+                >
+                  <Download size={15} /> Download Brochure
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onEnquire(flagshipProject)}
+                  className="btn btn--primary btn--sm"
+                >
+                  <Calendar size={15} /> Book Site Visit
+                </button>
+
+                <Link
+                  href="/layout-viewer"
+                  className="btn btn--outline btn--sm"
+                >
+                  <Map size={15} /> View Master Plan
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Section Heading matching Gallery layout */}
+      <SectionHeading
+        center
+        eyebrow="Available Approved Plots"
+        title="Find Your Dream Plot Today"
+        text="Explore our handpicked, approved residential layouts in the most sought-after prime locations across West Chennai. Every plot is legally vetted and ready for registration."
+      />
+
+      {/* Filter Tabs matching Gallery Tab style & alignment */}
+      <div className="plots-tab-bar">
+        <div className="gallery-filters plots-filters" role="tablist">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              role="tab"
+              aria-selected={activeTab === cat}
+              className={`gallery-filter-pill ${activeTab === cat ? 'gallery-filter-pill--active' : ''}`}
+              onClick={() => setActiveTab(cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Explore Interactive Layout Map Link Pill */}
+        <Link
+          href="/layout-viewer"
+          className="plots-map-cta-pill"
+        >
+          <Map size={14} /> Explore Interactive Layout Map
+        </Link>
       </div>
 
-      {/* Exactly 4 Plot Cards Grid */}
+      {/* Plots Card Grid matching Gallery visual consistency */}
       {displayList.length > 0 ? (
-        <div className="plots-grid">
+        <div className="gallery-grid plots-gallery-grid">
           {displayList.map((p) => (
             <PlotCard
               key={p.id}
               plot={p}
               onEnquire={onEnquire}
-              onViewLayout={handleOpenLayout}
             />
           ))}
         </div>
       ) : (
         <div className="empty">
-          <p>No plots match your selected filters.</p>
-          <Button variant="outline" size="sm" onClick={onReset} style={{ marginTop: 16 }}>
+          <p>No plots found matching your criteria.</p>
+          <button
+            type="button"
+            className="btn btn--outline btn--sm"
+            onClick={() => {
+              setActiveTab('All')
+              if (onReset) onReset()
+            }}
+            style={{ marginTop: 16 }}
+          >
             Clear Filters
-          </Button>
+          </button>
+        </div>
+      )}
+
+      {/* Brochure Modal */}
+      {downloadModal && (
+        <div className="brochure-modal" onClick={() => setDownloadModal(false)}>
+          <div className="brochure-modal__dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="brochure-modal__header">
+              <span className="eyebrow" style={{ marginBottom: 4 }}>Official Brochure</span>
+              <h3>Download Project Brochure</h3>
+              <p>Please enter your contact details to download the complete 15-Acre Vedanthangal Sandalwood Farm Land brochure & layout map.</p>
+            </div>
+
+            {brochureDownloaded ? (
+              <div className="brochure-modal__success">
+                <CheckCircle2 size={36} color="var(--green-600)" />
+                <h4>Thank you!</h4>
+                <p>Downloading brochure now...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleBrochureSubmit} className="brochure-modal__form">
+                <div className="brochure-modal__field">
+                  <label>Full Name</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Enter your name"
+                    value={brochureLead.name}
+                    onChange={(e) => setBrochureLead({ ...brochureLead, name: e.target.value })}
+                  />
+                </div>
+                <div className="brochure-modal__field">
+                  <label>Mobile Number (for WhatsApp copy)</label>
+                  <input
+                    required
+                    type="tel"
+                    placeholder="e.g. 98400 12345"
+                    pattern="[0-9+\s]{10,15}"
+                    value={brochureLead.phone}
+                    onChange={(e) => setBrochureLead({ ...brochureLead, phone: e.target.value })}
+                  />
+                </div>
+                <div className="brochure-modal__actions">
+                  <button type="submit" className="btn btn--gold btn--block">
+                    <Download size={15} /> Download PDF Now
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--outline btn--sm btn--block"
+                    onClick={() => setDownloadModal(false)}
+                    style={{ marginTop: 8 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       )}
     </Section>
   )
 }
-

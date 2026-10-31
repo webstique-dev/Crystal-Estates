@@ -3,10 +3,10 @@
 import { useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Phone, MapPin, Mail, ArrowUp } from 'lucide-react'
+import { MapPin, Phone, Mail, ArrowUp, Calendar } from 'lucide-react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
-import { Container, WhatsAppIcon } from '../ui'
+import { Container, LeafDecor, WhatsAppIcon } from '../ui'
 import { business, navLinks } from '../../data/site'
 
 export default function Footer() {
@@ -48,22 +48,43 @@ export default function Footer() {
   return (
     <>
       <footer className="footer-ref" ref={footerRef}>
-        <Container>
+        {/* Decorative Botanical Leaf Backgrounds */}
+        <LeafDecor
+          variant="branch"
+          className="footer-ref__leaf footer-ref__leaf--left"
+          opacity={0.08}
+        />
+        <LeafDecor
+          variant="laurel"
+          className="footer-ref__leaf footer-ref__leaf--right"
+          opacity={0.07}
+        />
+
+        <Container className="footer-ref__container">
           <div className="footer-ref__top">
-            {/* Brand column */}
+            {/* Brand column - Left-aligned */}
             <div className="footer-ref__col footer-ref__col--brand">
               <Link href="/" className="footer-ref__logo" aria-label={business.name}>
                 <img src="/logo-white.png" alt={business.name} width="160" height="42" />
               </Link>
               <p className="footer-ref__tagline">{business.tagline}</p>
               <div className="footer-ref__office-info">
-                <span><MapPin size={15} /> {business.address.city}</span>
-                <span><Phone size={15} /> {business.phone}</span>
-                <span><Mail size={15} /> {business.email}</span>
+                <span>
+                  <MapPin size={14} className="footer-ref__info-icon" />
+                  {business.address.city}
+                </span>
+                <a href={`tel:${business.phone.replace(/\s/g, '')}`} className="footer-ref__info-link">
+                  <Phone size={14} className="footer-ref__info-icon" />
+                  {business.phone}
+                </a>
+                <a href={`mailto:${business.email}`} className="footer-ref__info-link">
+                  <Mail size={14} className="footer-ref__info-icon" />
+                  {business.email}
+                </a>
               </div>
             </div>
 
-            {/* Explore column */}
+            {/* Explore column - Left-aligned */}
             <div className="footer-ref__col">
               <h4>Explore</h4>
               <ul>
@@ -72,24 +93,27 @@ export default function Footer() {
                     <Link href={getHref(l.href)}>{l.label}</Link>
                   </li>
                 ))}
+                <li>
+                  <Link href="/layout-viewer">Interactive Layout Map</Link>
+                </li>
               </ul>
             </div>
 
-            {/* Listings & Verification */}
+            {/* Key Projects - Left-aligned */}
             <div className="footer-ref__col">
-              <h4>Verification</h4>
+              <h4>Key Projects</h4>
               <ul>
-                <li><Link href={getHref('#plots')}>DTCP Approved Plots</Link></li>
-                <li><Link href={getHref('#plots')}>CMDA Approved Layouts</Link></li>
-                <li><Link href={getHref('#about')}>Clear Title Guarantee</Link></li>
-                <li><Link href={getHref('#about')}>Bank Loan Partnerships</Link></li>
-                <li><a href={business.justdial} target="_blank" rel="noopener noreferrer">Verified Justdial Listing</a></li>
+                <li><Link href={getHref('#projects')}>Vedanthangal Sandalwood (15 Acres)</Link></li>
+                <li><Link href={getHref('#projects')}>Kolapakkam CMDA Layout</Link></li>
+                <li><Link href={getHref('#projects')}>Somamangalam DTCP Plots</Link></li>
+                <li><Link href={getHref('#projects')}>Brammadesam Residential</Link></li>
+                <li><Link href={getHref('#about')}>100% Clear Title Guarantee</Link></li>
               </ul>
             </div>
 
-            {/* Office location */}
+            {/* Head Office location - Left-aligned */}
             <div className="footer-ref__col">
-              <h4>Site Office</h4>
+              <h4>Head Office</h4>
               <p className="footer-ref__address-text">
                 {business.address.line1},<br />
                 {business.address.line2},<br />
@@ -109,17 +133,23 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Bottom strip */}
+          {/* Mandatory Legal Disclaimer - Center-aligned */}
+          <div className="footer-ref__disclaimer">
+            <p>{business.disclaimer}</p>
+          </div>
+
+          {/* Bottom strip with centered spacing & alignment */}
           <div className="footer-ref__bottom">
             <p className="footer-ref__copy">
-              © {new Date().getFullYear()} {business.name}. All rights reserved. DTCP & CMDA approved residential plots.
+              © {new Date().getFullYear()} {business.name}. All rights reserved. Farm Lands • Plots • Premium Living.
             </p>
             <div className="footer-ref__actions">
-              <Link href={getHref('#plots')} className="footer-ref__link">
-                View Plots
+              <Link href={getHref('#projects')} className="footer-ref__link">
+                View Projects
               </Link>
+              <span className="footer-ref__sep">•</span>
               <Link href={getHref('#contact')} className="footer-ref__link">
-                Schedule Visit
+                Book Site Visit
               </Link>
               <button
                 type="button"
@@ -127,23 +157,45 @@ export default function Footer() {
                 onClick={scrollToTop}
                 aria-label="Scroll to top"
               >
-                <ArrowUp size={16} />
+                <ArrowUp size={14} />
+                <span>Top</span>
               </button>
             </div>
           </div>
         </Container>
       </footer>
 
-      {/* Floating WhatsApp Action Button */}
-      <a
-        href={`https://wa.me/${business.whatsapp}?text=Hello%20Crystal%20Estates,%20I%20would%20like%20to%20inquire%20about%20your%20available%20plots.`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="wa-float"
-        aria-label="Chat with us on WhatsApp"
-      >
-        <WhatsAppIcon size={28} />
-      </a>
+      {/* Floating Action Shortcuts */}
+      <div className="floating-dock" aria-label="Quick contact shortcuts">
+        <a
+          href={getHref('#contact')}
+          className="floating-btn floating-btn--book"
+          aria-label="Book a site visit"
+        >
+          <Calendar size={15} />
+          <span className="floating-btn__text">Book Site Visit</span>
+        </a>
+
+        <a
+          href={`tel:${business.phone.replace(/\s/g, '')}`}
+          className="floating-btn floating-btn--call"
+          aria-label={`Call us at ${business.phone}`}
+        >
+          <Phone size={15} />
+          <span className="floating-btn__text">Call Us</span>
+        </a>
+
+        <a
+          href={`https://wa.me/${business.whatsapp}?text=Hello%20Crystal%20Estates,%20I%20would%20like%20to%20inquire%20about%20your%20farm%20lands%20and%20plots.`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="floating-btn floating-btn--wa"
+          aria-label="Chat with us on WhatsApp"
+        >
+          <WhatsAppIcon size={18} />
+          <span className="floating-btn__text">WhatsApp</span>
+        </a>
+      </div>
     </>
   )
 }

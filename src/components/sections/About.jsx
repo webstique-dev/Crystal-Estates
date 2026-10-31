@@ -77,7 +77,7 @@ export default function About() {
       <div className="excellence-sec__heading">
         <h2>
           Experience Excellence<br />
-          In Real Estate
+          In Farmland & Real Estate
         </h2>
       </div>
 
@@ -85,11 +85,11 @@ export default function About() {
         {/* Left Column: Mission, Narrative & Approvals */}
         <div className="excellence-col excellence-col--left">
           <div className="excellence-col__lead">
-            <h3>Your Trusted Partner in Finding the Perfect Plot</h3>
+            <h3>Your Trusted Partner in Finding the Perfect Land</h3>
             <p>
-              At {business.name}, we believe that buying land should be an exciting and stress-free experience.
-              From our office in Sridevi Gardens, Valasaravakkam, we guide every buyer through plot selection,
-              legal verification, and clear registration — with zero pressure and complete transparency.
+              At {business.name}, we believe that acquiring land should be a proud, secure, and transparent milestone.
+              From our registered office at No. 9, A.K.R. Nagar Main Road, Crystal Tower, Valasaravakkam, Chennai, we guide every buyer through
+              soil selection, legal verification, patta documentation, and long-term farm management — with zero pressure and complete clarity.
             </p>
           </div>
 
@@ -102,9 +102,9 @@ export default function About() {
           <div className="excellence-partners">
             <span className="excellence-partners__label">Recognized & Approved:</span>
             <div className="excellence-partners__list">
-              <span className="excellence-partner-pill"><ShieldCheck size={14} /> DTCP</span>
-              <span className="excellence-partner-pill"><BadgeCheck size={14} /> CMDA</span>
-              <span className="excellence-partner-pill"><CheckCircle2 size={14} /> RERA</span>
+              <span className="excellence-partner-pill"><ShieldCheck size={14} /> Clear Patta</span>
+              <span className="excellence-partner-pill"><BadgeCheck size={14} /> DTCP</span>
+              <span className="excellence-partner-pill"><CheckCircle2 size={14} /> CMDA</span>
               <span className="excellence-partner-pill"><Landmark size={14} /> Bank Approved</span>
             </div>
           </div>
@@ -125,25 +125,25 @@ export default function About() {
         {/* Right Column: Expert Guidance, Wide Selection & Reviews Stack */}
         <div className="excellence-col excellence-col--right">
           <div className="excellence-feature">
-            <h4>Expert Guidance</h4>
+            <h4>Expert Guidance & Legal Vetting</h4>
             <p>
-              Our experienced property advisors provide professional title vetting, encumbrance certificate (EC) checks, and personalized support at every step.
+              Our senior legal counsel conducts exhaustive title vetting back to 30+ years, complete encumbrance certificate (EC) audits, and seamless patta registration.
             </p>
           </div>
 
           <div className="excellence-divider" />
 
           <div className="excellence-feature">
-            <h4>Wide Property Selection</h4>
+            <h4>Curated Farmland & Plot Portfolio</h4>
             <p>
-              From prime residential plots in Somamangalam and Kolapakkam to fast-growing gated layouts in Brammadesam and Ozhalai Panchayath.
+              From our flagship 15-acre managed sandalwood agro-forestry farmland near Vedanthangal Bird Sanctuary to prime residential layouts in Kolapakkam, Somamangalam, and Brammadesam.
             </p>
           </div>
 
           <div className="excellence-divider" />
 
           <div className="excellence-reviews">
-            <span className="excellence-reviews__title">Reviews:</span>
+            <span className="excellence-reviews__title">Client Trust:</span>
             <div className="excellence-reviews__stack">
               <div className="excellence-avatars">
                 <span className="excellence-avatar excellence-avatar--1">R</span>
@@ -152,13 +152,13 @@ export default function About() {
               </div>
               <div className="excellence-reviews__rating">
                 <div className="excellence-stars">
-                  <Star size={14} fill="#c9a24b" color="#c9a24b" />
-                  <Star size={14} fill="#c9a24b" color="#c9a24b" />
-                  <Star size={14} fill="#c9a24b" color="#c9a24b" />
-                  <Star size={14} fill="#c9a24b" color="#c9a24b" />
-                  <Star size={14} fill="#c9a24b" color="#c9a24b" />
+                  <Star size={14} fill="#B8964E" color="#B8964E" />
+                  <Star size={14} fill="#B8964E" color="#B8964E" />
+                  <Star size={14} fill="#B8964E" color="#B8964E" />
+                  <Star size={14} fill="#B8964E" color="#B8964E" />
+                  <Star size={14} fill="#B8964E" color="#B8964E" />
                 </div>
-                <span><strong>4.9</strong> Customer Ratings · 500+ Buyers</span>
+                <span><strong>4.9</strong> Customer Rating · 500+ Landowners</span>
               </div>
             </div>
           </div>

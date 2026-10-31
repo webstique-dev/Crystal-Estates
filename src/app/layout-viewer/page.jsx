@@ -5,7 +5,6 @@ import Link from 'next/link'
 import {
   ArrowLeft,
   MapPin,
-  Sparkles,
   Map,
   Plus,
   Trash2,
@@ -13,13 +12,14 @@ import {
   X,
   Layers,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  Phone,
+  Calendar
 } from 'lucide-react'
-import Navbar from '../../components/sections/Navbar'
-import Footer from '../../components/sections/Footer'
 import PlotViewer from '../../components/plot-viewer/PlotViewer'
 import { KOLAPAKKAM_METADATA } from '../../data/kolapakkamPlots'
 import { computePathCentroid } from '@/lib/svgPathCentroid'
+import { business } from '../../data/site'
 import './layout-viewer.css'
 
 export default function LayoutViewerPage() {
@@ -259,38 +259,31 @@ export default function LayoutViewerPage() {
   const blockedCount = plots.filter((p) => p.status === 'Blocked').length
 
   return (
-    <>
-      <Navbar />
-      <main className="lv-page">
-        <div className="lv-container">
-          {/* ── Top Navigation Bar ── */}
-          <nav className="lv-nav" aria-label="Breadcrumb navigation">
-            <Link href="/" className="lv-back-btn">
-              <ArrowLeft size={16} /> Back to Home
+    <div className="lv-app">
+      {/* ── Top Dedicated App Navigation Bar (Navbar hidden on this page) ── */}
+      <header className="lv-topbar">
+        <div className="lv-topbar__inner">
+          <div className="lv-topbar__left">
+            <Link href="/" className="lv-topbar__brand" aria-label="Crystal Estates Home">
+              <img src="/logo.png" alt="Crystal Estates" width="132" height="34" className="lv-topbar__logo" />
             </Link>
 
-            <div className="lv-location-badge">
-              <MapPin size={15} color="var(--green-900, #0a5c36)" />
-              <span>
-                {metadata.village}, {metadata.taluk} Taluk, Chennai
-              </span>
-            </div>
-          </nav>
+            <span className="lv-topbar__divider" />
 
-          {/* ── Page Header (Template Aesthetic) ── */}
-          <header className="lv-header">
-            <div className="lv-header__eyebrow">
-              <Sparkles size={13} /> Live Interactive Master Plan & Management
-            </div>
-            <h1 className="lv-header__title">{metadata.title}</h1>
-            <p className="lv-header__desc">
-              Explore real-time plot boundaries, live availability, facing, and dimensions.
-              Manage inventory or add new plots directly to the live database.
-            </p>
-          </header>
+            <Link href="/" className="lv-topbar__back-btn" aria-label="Back to Homepage">
+              <ArrowLeft size={14} />
+              <span>Back to Home</span>
+            </Link>
 
-          {/* ── Navigation Toolbar & Action Buttons ── */}
-          <div className="lv-toolbar">
+            <span className="lv-topbar__divider lv-hide-tablet" />
+
+            <div className="lv-topbar__project lv-hide-tablet">
+              <span className="lv-topbar__badge">CMDA Approved</span>
+              <span className="lv-topbar__project-name">{metadata.title}</span>
+            </div>
+          </div>
+
+          <div className="lv-topbar__right">
             {/* View Mode Tabs */}
             <div className="lv-tabs" role="tablist">
               <button
@@ -300,8 +293,8 @@ export default function LayoutViewerPage() {
                 role="tab"
                 aria-selected={activeTab === 'map'}
               >
-                <Map size={16} />
-                Interactive Map
+                <Map size={15} />
+                <span><span className="lv-hide-mobile">Interactive </span>Map</span>
                 <span className="lv-tab-count">{totalCount}</span>
               </button>
 
@@ -312,22 +305,23 @@ export default function LayoutViewerPage() {
                 role="tab"
                 aria-selected={activeTab === 'manage'}
               >
-                <Layers size={16} />
-                Manage Inventory
+                <Layers size={15} />
+                <span>Manage<span className="lv-hide-mobile"> Plots</span></span>
                 <span className="lv-tab-count">{totalCount}</span>
               </button>
             </div>
 
-            {/* Action Buttons */}
+            {/* Quick Actions */}
             <div className="lv-actions">
               <button
                 type="button"
                 className="lv-add-btn"
                 onClick={handleOpenAdd}
                 aria-label="Add New Plot"
+                title="Add New Plot"
               >
-                <Plus size={16} />
-                Add New Plot
+                <Plus size={15} />
+                <span className="lv-hide-xs">Add Plot</span>
               </button>
 
               <button
@@ -337,27 +331,79 @@ export default function LayoutViewerPage() {
                 title="Refresh from Database"
                 aria-label="Refresh data"
               >
-                <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               </button>
+
+              <a
+                href={`https://wa.me/${business.whatsapp}?text=Hello%20Crystal%20Estates,%20I%20am%20viewing%20the%20Kolapakkam%20Layout%20and%20would%20like%20to%20book%20a%20site%20visit.`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lv-book-btn lv-hide-mobile"
+              >
+                <Calendar size={14} />
+                <span>Book Site Visit</span>
+              </a>
             </div>
           </div>
+        </div>
+      </header>
 
-          {/* ── Tab Content 1: Interactive Map View ── */}
-          {activeTab === 'map' && (
-            <div style={{ width: '100%' }}>
-              <PlotViewer
-                initialPlots={plots}
-                backgroundUrl={metadata.layoutBackgroundUrl}
-                viewBox={metadata.viewBox}
-                metadata={metadata}
-                whatsappNumber="919444280722"
-              />
-            </div>
-          )}
+      {/* ── Sub-header / Status Summary Bar ── */}
+      <div className="lv-statusbar">
+        <div className="lv-statusbar__inner">
+          <div className="lv-statusbar__meta">
+            <MapPin size={14} className="lv-statusbar__icon" />
+            <span className="lv-statusbar__loc">
+              {metadata.village}, {metadata.taluk} Taluk, Chennai
+            </span>
+            <span className="lv-statusbar__dot">•</span>
+            <span className="lv-statusbar__code">S.No: 206/2A1</span>
+          </div>
 
-          {/* ── Tab Content 2: Manage Plots Inventory & Database ── */}
-          {activeTab === 'manage' && (
-            <div>
+          <div className="lv-statusbar__chips">
+            <span className="lv-chip lv-chip--total">
+              <strong>{totalCount}</strong> Total Plots
+            </span>
+            <span className="lv-chip lv-chip--avail">
+              <span className="lv-chip-dot lv-chip-dot--avail" />
+              <strong>{availCount}</strong> Available
+            </span>
+            <span className="lv-chip lv-chip--booked">
+              <span className="lv-chip-dot lv-chip-dot--booked" />
+              <strong>{bookedCount}</strong> Booked
+            </span>
+            <span className="lv-chip lv-chip--sold">
+              <span className="lv-chip-dot lv-chip-dot--sold" />
+              <strong>{soldCount}</strong> Sold
+            </span>
+            {blockedCount > 0 && (
+              <span className="lv-chip lv-chip--blocked">
+                <span className="lv-chip-dot lv-chip-dot--blocked" />
+                <strong>{blockedCount}</strong> Blocked
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Main Workspace ── */}
+      <main className="lv-main">
+        {/* ── Tab Content 1: Interactive Map View ── */}
+        {activeTab === 'map' && (
+          <div className="lv-viewer-wrap">
+            <PlotViewer
+              initialPlots={plots}
+              backgroundUrl={metadata.layoutBackgroundUrl}
+              viewBox={metadata.viewBox}
+              metadata={metadata}
+              whatsappNumber={business.whatsapp}
+            />
+          </div>
+        )}
+
+        {/* ── Tab Content 2: Manage Plots Inventory & Database ── */}
+        {activeTab === 'manage' && (
+          <div className="lv-container lv-manage-wrap">
               {/* Stats Overview */}
               <div className="lv-stats-grid">
                 <div className="lv-stat-card">
@@ -666,9 +712,35 @@ export default function LayoutViewerPage() {
               {toast}
             </div>
           )}
-        </div>
       </main>
-      <Footer />
-    </>
+
+      {/* ── Sleek Compact App Footer (Global Footer hidden on this page) ── */}
+      <footer className="lv-app-footer">
+        <div className="lv-app-footer__inner">
+          <div className="lv-app-footer__left">
+            <span>© {new Date().getFullYear()} {business.name}</span>
+            <span className="lv-app-footer__sep">•</span>
+            <span>Interactive Layout Map Portal</span>
+            <span className="lv-app-footer__sep">•</span>
+            <span className="lv-app-footer__sync">● Database Synced</span>
+          </div>
+
+          <div className="lv-app-footer__right">
+            <a href={`tel:${business.phone.replace(/\s/g, '')}`} className="lv-app-footer__link">
+              <Phone size={13} /> {business.phone}
+            </a>
+            <span className="lv-app-footer__sep">•</span>
+            <a
+              href={`https://wa.me/${business.whatsapp}?text=Hello%20Crystal%20Estates,%20I%20am%20inquiring%20about%20Kolapakkam%20plots.`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lv-app-footer__link"
+            >
+              WhatsApp Support
+            </a>
+          </div>
+        </div>
+      </footer>
+    </div>
   )
 }
