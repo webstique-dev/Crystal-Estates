@@ -47,7 +47,7 @@ export default function HomePage() {
         <Hero onSearch={setFilters} />
         <Marquee items={strip} />
         <About />
-        <Team />
+        {/* <Team /> */}
         <Plots filters={filters} onEnquire={enquire} onReset={() => setFilters(defaultFilters)} />
         <StatsBand />
         <Features />
