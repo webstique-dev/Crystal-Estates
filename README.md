@@ -1,32 +1,112 @@
-# Crystal Estates — Premium Real Estate Website
+# Crystal Estates — Architecture & Setup Guide
 
-A modern, responsive real estate web application for Crystal Estates, featuring DTCP & CMDA approved residential plots in Chennai.
+Crystal Estates is organized as a decoupled, production-grade full-stack architecture with a dedicated **Backend Server (`server/`)** and a standalone **Frontend Client (`client/`)**.
 
-## Tech Stack
-- **Framework:** React 19 + Vite
-- **Styling:** CSS variables & responsive design system
-- **Animations:** GSAP 3 (GreenSock) + ScrollTrigger, Framer Motion
-- **Icons:** Lucide React
-- **Linting:** ESLint 9+
+---
 
-## Local Development
-```bash
-npm install
-npm run dev      # Starts Vite development server
-npm run build    # Creates optimized production build in /dist
-npm run lint     # Runs ESLint checks
-npm run preview  # Previews production build locally
+## 📁 Project Architecture
+
+```
+crystal-estates/
+├── client/                     # 🌐 Standalone Frontend Application
+│   ├── src/                    # UI Components, Layouts, Design System & App Pages
+│   │   ├── app/                # Next.js App Router (Home, Layout Viewer, 404)
+│   │   ├── components/         # Reusable UI & Section Components
+│   │   ├── data/               # Static Site & Layout Data
+│   │   ├── lib/                # Client Utilities (GSAP, SVG Centroid)
+│   │   └── index.css           # Global Design Tokens & Typography
+│   ├── public/                 # Static Assets (Images, Logos, Icons)
+│   ├── next.config.mjs         # Next.js Configuration & API Proxy Rewrites
+│   ├── jsconfig.json           # Path Aliases (@/* -> ./src/*)
+│   ├── eslint.config.js        # ESLint Configuration
+│   ├── .env.local              # Client Environment Variables
+│   └── package.json            # Client Dependencies & Scripts
+│
+├── server/                     # ⚡ Dedicated Backend API Server
+│   ├── src/
+│   │   ├── config/             # Database Connection Pooling (MongoDB)
+│   │   ├── routes/             # REST Endpoints (/api/plots, /api/plots/kolapakkam)
+│   │   ├── lib/                # SVG Centroid & Geometric Calculations
+│   │   ├── data/               # Fallback Plot & Metadata Sources
+│   │   └── server.js           # Express App, CORS, Logging, Health Check
+│   ├── scripts/                # Database Seeding & Verification Scripts
+│   ├── .env                    # Server Port, Database URI & Credentials
+│   └── package.json            # Server Dependencies & Scripts
+│
+├── scripts/                    # 🛠️ Unified Development & Startup Scripts
+│   ├── dev.js                  # Concurrently runs both Server & Client
+│   └── start.js                # Concurrently starts production builds
+├── .gitignore                  # Monorepo Git Ignore Rules
+└── package.json                # Monorepo Workspace Configuration
 ```
 
-## Project Structure
-- `src/data/site.js`: Single source of truth for all site data (business info, plots, team, reviews, FAQs).
-- `src/components/sections/`: Website sections (Hero, About, Team, Plots, Features, Process, Testimonials, FAQ, Contact, Footer).
-- `src/components/ui/`: Reusable design components and botanical leaf decorations.
-- `src/lib/gsap.js`: Centralized GSAP and ScrollTrigger setup.
-- `src/index.css`: Design tokens, layout primitives, and responsive styling.
+---
 
-## Deployment to Vercel
-This repository is configured with `vercel.json` for one-click deployment:
-1. Push this repository to GitHub.
-2. Import the repository in [Vercel Dashboard](https://vercel.com/new).
-3. Vercel automatically detects Vite, sets the build command to `npm run build`, and outputs to `dist`.
+## 🚀 Quick Start (Running Both Together)
+
+### 1. Install Dependencies
+```bash
+npm run install:all
+```
+
+### 2. Start Both Server & Client Concurrently
+```bash
+npm run dev
+```
+- **Backend Server:** [http://localhost:5000](http://localhost:5000)
+- **Frontend Client:** [http://localhost:3000](http://localhost:3000)
+- API requests made by the client to `/api/*` are automatically proxied to `http://localhost:5000/api/*`.
+
+---
+
+## 🖥️ Running Services Independently
+
+### Run Backend Server Only
+```bash
+# Navigate to server
+cd server
+npm install
+npm run dev
+```
+Or from the root directory:
+```bash
+npm run dev:server
+```
+
+**Available Server Endpoints:**
+- `GET /api/health` — Service and database connection status
+- `GET /api/plots` — Featured plots list
+- `PATCH /api/plots` — Update featured plot
+- `GET /api/plots/kolapakkam` — Master plan layout & plots
+- `POST /api/plots/kolapakkam` — Add new plot
+- `PATCH /api/plots/kolapakkam` — Update plot details / status
+- `DELETE /api/plots/kolapakkam?plotNo=1` — Delete plot
+
+### Run Frontend Client Only
+```bash
+# Navigate to client
+cd client
+npm install
+npm run dev
+```
+Or from the root directory:
+```bash
+npm run dev:client
+```
+Build client for production:
+```bash
+npm run build
+```
+
+---
+
+## 🗄️ Database Management
+To seed or refresh the MongoDB database with initial plots and the Kolapakkam master layout:
+```bash
+npm run seed:server
+```
+Or from within the `server` directory:
+```bash
+cd server
+npm run seed
+```

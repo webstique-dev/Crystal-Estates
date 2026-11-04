@@ -1,39 +1,33 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Next.js Build Outputs
+.next/
+client/.next/
+client/out/
+client/build/
+dist/
+
+# Environment Variables
+.env
+.env*.local
+client/.env*.local
+client/.env
+server/.env
+server/.env*.local
+
+# Testing & Reports
+coverage/
+playwright-report/
+test-results/
+
 # Logs
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-.next
-out
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# OS Files
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Tests and test scripts
-scripts/test*
-scripts/debug*
-scripts/inspect*
-scripts/capture*
-test/
-tests/
-__tests__/
-*.test.*
-*.spec.*
-coverage/
-
+Thumbs.db

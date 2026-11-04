@@ -68,7 +68,7 @@ export default function Hero({ onSearch }) {
           '-=0.3',
         )
         .from(
-          '.hero-ref__highlights',
+          '.hero-ref__facts-strip',
           {
             y: 12,
             opacity: 0,
