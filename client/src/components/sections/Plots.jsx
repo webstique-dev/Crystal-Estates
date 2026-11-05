@@ -13,13 +13,12 @@ const categories = ['All', 'Farm Lands', 'Residential Plots']
 
 export function PlotCard({ plot, onEnquire }) {
   const isAvailable = plot.status === 'Available' || plot.status === 'Booking Open'
-  const isFewLeft = plot.status === 'Few Left'
   const isSoldOut = plot.status === 'Sold Out'
   const hasLayout = Boolean(plot.hasLayoutMap || plot.name === 'Kolapakkam')
 
   return (
     <div className="gallery-card plot-gallery-card">
-      {/* Media with Category and Status Badges */}
+      {/* Media without any overlays on the image */}
       <div className="gallery-card__media">
         <img
           src={plot.image || '/images/plot-1.jpg'}
@@ -27,15 +26,18 @@ export function PlotCard({ plot, onEnquire }) {
           className="gallery-card__img"
           loading="lazy"
         />
-        <span className="gallery-card__category">{plot.approval || plot.type}</span>
-        <span className={`plot-gallery-card__status ${isSoldOut ? 'plot-gallery-card__status--sold' : isFewLeft ? 'plot-gallery-card__status--warn' : 'plot-gallery-card__status--avail'}`}>
-          <span className="plot-gallery-card__dot" />
-          {isAvailable ? 'Available' : plot.status}
-        </span>
       </div>
 
       {/* Card Info matching Gallery card layout */}
       <div className="gallery-card__info plot-gallery-card__info">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          {(plot.approval || plot.type) && (
+            <span className="project-card__type-pill">{plot.approval || plot.type}</span>
+          )}
+          {plot.status && (
+            <span className="project-card__status-pill">{isAvailable ? 'Available' : plot.status}</span>
+          )}
+        </div>
         <div className="plot-gallery-card__title-row">
           <h4 className="gallery-card__title plot-gallery-card__title">{plot.name}</h4>
           <span className="plot-gallery-card__price">
@@ -124,6 +126,14 @@ export default function Plots({ filters = {}, onEnquire, onReset }) {
   }
 
   // Filter based on search props if provided
+  if (filters?.type && filters.type !== 'All') {
+    if (filters.type === 'Farm Land') {
+      displayList = flagshipProject ? [flagshipProject] : []
+    } else if (filters.type === 'Residential Plot') {
+      displayList = residentialPlots
+    }
+  }
+
   if (filters?.location) {
     displayList = displayList.filter((p) => p.location.toLowerCase().includes(filters.location.toLowerCase()))
   }

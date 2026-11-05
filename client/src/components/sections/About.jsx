@@ -94,7 +94,7 @@ export default function About() {
           </div>
 
           <div>
-            <Button as="a" href="#contact" variant="dark" size="sm">
+            <Button href="/contact" variant="dark" size="sm">
               Talk to Our Team
             </Button>
           </div>

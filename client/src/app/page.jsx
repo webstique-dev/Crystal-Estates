@@ -1,63 +1,58 @@
-'use client'
+import HeroSection from '../components/sections/HeroSection'
+import StatsBar from '../components/sections/StatsBar'
+import FeaturedProjectsSection from '../components/sections/FeaturedProjectsSection'
+import ServicesOverview from '../components/sections/ServicesOverview'
+import WhyChooseUs from '../components/sections/WhyChooseUs'
+import EnquirySection from '../components/sections/EnquirySection'
+import TestimonialsSection from '../components/TestimonialsSection'
 
-import { useState } from 'react'
-import { ShieldCheck, BadgeCheck, Trees, Landmark, Handshake } from 'lucide-react'
-import { Marquee } from '../components/ui'
-import Navbar from '../components/sections/Navbar'
-import Hero from '../components/sections/Hero'
-import About from '../components/sections/About'
-import Team from '../components/sections/Team'
-import Plots from '../components/sections/Plots'
-import StatsBand from '../components/sections/StatsBand'
-import Features from '../components/sections/Features'
-import Gallery from '../components/sections/Gallery'
-import Process from '../components/sections/Process'
-import Testimonials from '../components/sections/Testimonials'
-import Faq from '../components/sections/Faq'
-import Contact from '../components/sections/Contact'
-import Footer from '../components/sections/Footer'
-
-const defaultFilters = { location: '', size: 0, budget: 0 }
-
-const strip = [
-  [ShieldCheck, '100% Clear Titles & Patta'],
-  [Trees, 'Managed Sandalwood Farmland'],
-  [BadgeCheck, 'DTCP & CMDA Approved Layouts'],
-  [Landmark, 'Bank Loan Partnerships'],
-  [Handshake, 'Guided Weekend Site Visits'],
-].map(([Icon, label], idx) => (
-  <span key={idx} className="marquee-badge">
-    <Icon size={18} /> {label}
-  </span>
-))
+export const metadata = {
+  title: 'Crystal Estates | Own Land You Can Trust | ASSETS CREATOR Chennai',
+  description:
+    'Verified plots and farmland around Chennai with clear titles and complete documentation. CMDA and DTCP approved residential layouts and sandalwood agro-forestry farmland.',
+  openGraph: {
+    title: 'Crystal Estates | Own Land You Can Trust | ASSETS CREATOR',
+    description:
+      'Verified plots and farmland around Chennai with clear titles and complete documentation.',
+    url: 'https://crystalestates.in',
+    siteName: 'Crystal Estates',
+    images: [
+      {
+        url: '/images/vedanthangal.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Crystal Estates Sandalwood Farm Land Chennai',
+      },
+    ],
+  },
+}
 
 export default function HomePage() {
-  const [filters, setFilters] = useState(defaultFilters)
-  const [selectedPlot, setSelectedPlot] = useState(null)
-
-  const enquire = (plot) => {
-    setSelectedPlot(plot)
-    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   return (
-    <>
-      <Navbar />
-      <main>
-        <Hero onSearch={setFilters} />
-        <Marquee items={strip} />
-        <About />
-        {/* <Team /> */}
-        <Plots filters={filters} onEnquire={enquire} onReset={() => setFilters(defaultFilters)} />
-        <StatsBand />
-        <Features />
-        <Gallery />
-        <Process />
-        <Testimonials />
-        <Faq />
-        <Contact selectedPlot={selectedPlot} />
-      </main>
-      <Footer />
-    </>
+    <main>
+      {/* 1. HeroSection */}
+      <HeroSection
+        heading="Own Land You Can Trust"
+        subtext="Verified plots and farmland around Chennai with clear titles and complete documentation."
+      />
+
+      {/* 2. StatsBar */}
+      <StatsBar />
+
+      {/* 3. Featured ProjectGrid + ProjectCard */}
+      <FeaturedProjectsSection />
+
+      {/* 4. ServicesOverview */}
+      <ServicesOverview />
+
+      {/* 5. WhyChooseUs */}
+      <WhyChooseUs />
+
+      {/* 6. EnquirySection */}
+      <EnquirySection />
+
+      {/* 7. TestimonialsSection */}
+      <TestimonialsSection />
+    </main>
   )
 }
