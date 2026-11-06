@@ -149,11 +149,13 @@ export default function EnquiryForm({
         <Field label="Interested Plot or Layout">
           <select value={form.interest} onChange={handleChange('interest')}>
             <option value="">General Enquiry / Not Decided</option>
-            {plots.map((p) => (
-              <option key={p.id} value={p.name}>
-                {p.name} ({p.location} • {p.approval})
-              </option>
-            ))}
+            {plots
+              .filter((p) => p.status !== 'Sold Out')
+              .map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name} ({p.location} • {p.approval})
+                </option>
+              ))}
           </select>
         </Field>
 

@@ -6,7 +6,11 @@ import { gsap, isReducedMotion } from '../../lib/gsap'
 import { Section, SectionHeading, LeafDecor } from '../ui'
 import { steps } from '../../data/site'
 
-export default function Process() {
+export default function Process({
+  eyebrow = 'How It Works',
+  title = 'Our Business Process',
+  text = 'A transparent, hassle-free path to owning your approved residential plot and farmland asset in Chennai.',
+}) {
   const sectionRef = useRef(null)
 
   useGSAP(
@@ -48,9 +52,9 @@ export default function Process() {
       <LeafDecor variant="single" className="process-sec__leaf" opacity={0.05} style={{ top: 20, right: 30 }} />
       <SectionHeading
         center
-        eyebrow="How It Works"
-        title="From enquiry to handover in 5 simple steps"
-        text="A transparent, hassle-free path to owning your approved residential plot in Chennai."
+        eyebrow={eyebrow}
+        title={title}
+        text={text}
       />
       <div className="process-steps">
         {steps.map((s, i) => (

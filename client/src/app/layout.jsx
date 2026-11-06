@@ -1,6 +1,7 @@
 import { Montserrat, Playfair_Display } from 'next/font/google'
 import Header from '../components/sections/Header'
 import Footer from '../components/sections/Footer'
+import SiteVisitPopup from '../components/ui/SiteVisitPopup'
 import '../index.css'
 
 const montserrat = Montserrat({
@@ -177,6 +178,7 @@ export default function RootLayout({ children }) {
         <Header />
         {children}
         <Footer />
+        <SiteVisitPopup />
       </body>
     </html>
   )

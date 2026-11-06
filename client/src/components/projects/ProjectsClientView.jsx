@@ -184,6 +184,7 @@ export default function ProjectsClientView() {
                   <option value="Available">Available</option>
                   <option value="Booking Open">Booking Open</option>
                   <option value="Few Left">Few Left</option>
+                  <option value="Sold Out">Sold Out</option>
                 </select>
               </div>
             </div>

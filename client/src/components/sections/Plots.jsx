@@ -35,7 +35,11 @@ export function PlotCard({ plot, onEnquire }) {
             <span className="project-card__type-pill">{plot.approval || plot.type}</span>
           )}
           {plot.status && (
-            <span className="project-card__status-pill">{isAvailable ? 'Available' : plot.status}</span>
+            <span
+              className={`project-card__status-pill project-card__status-pill--${plot.status.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              {plot.status}
+            </span>
           )}
         </div>
         <div className="plot-gallery-card__title-row">

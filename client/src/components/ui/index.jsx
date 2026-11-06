@@ -6,6 +6,7 @@ import { gsap, isReducedMotion } from '../../lib/gsap'
 import Link from 'next/link'
 export { LeafDecor } from './LeafDecor'
 export { PageHero } from './PageHero'
+export { default as SiteVisitPopup } from './SiteVisitPopup'
 
 /* Reusable layout primitives & GSAP-powered animated building blocks */
 

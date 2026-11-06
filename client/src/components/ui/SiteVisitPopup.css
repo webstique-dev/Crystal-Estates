@@ -1,0 +1,821 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   ENQUIRE FOR A SITE VISIT: Animated Bottom-Right Floating Popup & Booking Modal
+   Theme: Emerald Forest (#0a5c36), Gold (#c9a24b), Crisp Surfaces
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── 1. Floating Bottom-Right Popup ── */
+.svp-popup {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: #ffffff;
+  border: 1px solid rgba(10, 92, 54, 0.16);
+  border-radius: 18px;
+  padding: 18px 20px 18px 20px;
+  box-shadow: 
+    0 16px 40px -8px rgba(10, 50, 30, 0.22),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(10, 92, 54, 0.06);
+  z-index: 990;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  transform-origin: bottom right;
+  opacity: 0;
+  transform: scale(0.85) translateY(18px);
+  pointer-events: none;
+  transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1), transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.svp-popup--visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+.svp-popup:hover {
+  box-shadow: 
+    0 22px 48px -10px rgba(10, 50, 30, 0.3),
+    0 6px 20px rgba(0, 0, 0, 0.06),
+    0 0 0 1.5px rgba(10, 92, 54, 0.2);
+}
+
+/* ── Creative Location Radar & GPS Animations ── */
+.svp-radar-zone {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.svp-pin-badge {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0a5c36 0%, #064024 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  box-shadow: 0 4px 14px rgba(10, 92, 54, 0.4);
+  animation: svpPinFloat 2.6s ease-in-out infinite;
+}
+
+.svp-pin-icon {
+  color: #f7d27e;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes svpPinFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Concentric Expanding Radar Pulses */
+.svp-radar-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(10, 92, 54, 0.28);
+  transform: translate(-50%, -50%) scale(1);
+  z-index: 1;
+  pointer-events: none;
+  animation: svpRadarPulse 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+.svp-radar-pulse--2 {
+  animation-delay: 1.4s;
+  background: rgba(201, 162, 75, 0.22);
+}
+
+@keyframes svpRadarPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* ── Dismiss (Close) Button on Card ── */
+.svp-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(15, 61, 46, 0.16);
+  background: var(--green-50, #f1f7f4);
+  color: var(--muted, #49544c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.18s ease;
+  z-index: 20;
+}
+
+.svp-close-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  transform: rotate(90deg) scale(1.05);
+}
+
+/* ── Content Body ── */
+.svp-body {
+  flex: 1;
+  padding-right: 14px;
+}
+
+.svp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--green-900, #0a5c36);
+  margin-bottom: 4px;
+}
+
+.svp-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+  animation: svpLiveBlink 1.6s ease-in-out infinite;
+}
+
+@keyframes svpLiveBlink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.svp-title {
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green-900, #0a5c36);
+  line-height: 1.25;
+  margin: 0 0 5px;
+}
+
+.svp-desc {
+  font-size: 12px;
+  color: var(--muted, #5e6660);
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+/* Feature Pills */
+.svp-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.svp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 7px;
+  background: var(--green-50, #f1f7f4);
+  color: var(--green-800, #0d7344);
+  border-radius: 6px;
+  border: 1px solid rgba(10, 92, 54, 0.1);
+}
+
+/* Action CTA Button */
+.svp-actions {
+  display: flex;
+  align-items: center;
+}
+
+.svp-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #0a5c36 0%, #0d7344 100%);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(10, 92, 54, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.svp-cta-btn:hover {
+  background: linear-gradient(135deg, #0d7344 0%, #0a5c36 100%);
+  box-shadow: 0 6px 18px rgba(10, 92, 54, 0.4);
+  transform: translateY(-1px);
+}
+
+.svp-cta-arrow {
+  transition: transform 0.2s ease;
+}
+
+.svp-cta-btn:hover .svp-cta-arrow {
+  transform: translateX(3px);
+}
+
+/* ── 2. Interactive Booking Modal ── */
+.svp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 18, 11, 0.68);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: svpFadeIn 0.22s ease-out;
+}
+
+@keyframes svpFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.svp-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 28px 30px;
+  box-shadow: 0 24px 60px -12px rgba(10, 40, 25, 0.35);
+  border: 1px solid rgba(10, 92, 54, 0.12);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: svpModalPop 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+@keyframes svpModalPop {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.svp-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line, #e5e0d6);
+}
+
+.svp-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--green-900, #0a5c36);
+  background: var(--green-50, #f1f7f4);
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+
+.svp-modal-title {
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--green-900, #0a5c36);
+  margin: 0 0 6px;
+  line-height: 1.25;
+}
+
+.svp-modal-subtitle {
+  font-size: 13px;
+  color: var(--muted, #5e6660);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.svp-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(15, 61, 46, 0.15);
+  background: var(--green-50, #f1f7f4);
+  color: var(--muted, #5e6660);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.svp-modal-close:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+/* ── Modal Form ── */
+.svp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.svp-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.svp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.svp-field label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink, #22262a);
+}
+
+.svp-field input,
+.svp-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1.5px solid var(--line, #e2dcce);
+  background: #ffffff;
+  font-size: 13.5px;
+  color: var(--ink, #22262a);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.svp-field input:focus,
+.svp-field select:focus {
+  outline: none;
+  border-color: var(--green-900, #0a5c36);
+  box-shadow: 0 0 0 3px rgba(10, 92, 54, 0.12);
+}
+
+.svp-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  background: var(--green-50, #f1f7f4);
+  border-radius: 9px;
+  font-size: 12.5px;
+  color: var(--ink, #22262a);
+  line-height: 1.45;
+  cursor: pointer;
+  border: 1px solid rgba(10, 92, 54, 0.12);
+}
+
+.svp-checkbox-row input {
+  margin-top: 3px;
+  accent-color: var(--green-900, #0a5c36);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.svp-modal-perks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 11.5px;
+  color: var(--green-800, #0d7344);
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.svp-modal-perks span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Form Action Buttons */
+.svp-form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.svp-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: var(--green-900, #0a5c36);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(10, 92, 54, 0.3);
+  transition: all 0.2s ease;
+}
+
+.svp-submit-btn:hover {
+  background: #0d7344;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(10, 92, 54, 0.4);
+}
+
+.svp-wa-direct-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 18px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #128c7e;
+  border: 1.5px solid #25d366;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.svp-wa-direct-btn:hover {
+  background: #25d366;
+  color: #ffffff;
+}
+
+/* Success State */
+.svp-success-state {
+  text-align: center;
+  padding: 24px 10px;
+}
+
+.svp-success-icon {
+  color: #16a34a;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.svp-success-state h4 {
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 20px;
+  color: var(--green-900, #0a5c36);
+  margin: 0 0 8px;
+}
+
+.svp-success-state p {
+  font-size: 13.5px;
+  color: var(--muted, #5e6660);
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.svp-success-actions {
+  display: flex;
+  justify-content: center;
+}
+
+/* ── 2. Floating Action Pill with Visible "Book a Site Visit" Text & CTA ── */
+.svp-fab-wrap {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 990;
+  transform-origin: bottom right;
+  opacity: 0;
+  transform: scale(0.65) translateY(16px);
+  pointer-events: none;
+  transition: opacity 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.svp-fab-wrap--visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+.svp-fab-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #0a5c36 0%, #064024 100%);
+  border: 1.5px solid rgba(201, 162, 75, 0.55);
+  border-radius: 999px;
+  padding: 6px 8px 6px 8px;
+  box-shadow:
+    0 12px 32px -6px rgba(10, 50, 30, 0.5),
+    0 4px 14px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.2s ease;
+}
+
+.svp-fab-pill:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 18px 40px -6px rgba(10, 50, 30, 0.6),
+    0 6px 18px rgba(201, 162, 75, 0.35);
+  border-color: rgba(201, 162, 75, 0.9);
+}
+
+.svp-fab-pill:active {
+  transform: scale(0.98);
+}
+
+/* Icon Box with Pulsing Beacon */
+.svp-fab-pill__icon-box {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(201, 162, 75, 0.4);
+}
+
+.svp-fab-pill__pin {
+  color: #f7d27e;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  animation: svpPinFloat 2.6s ease-in-out infinite;
+  position: relative;
+  z-index: 2;
+}
+
+.svp-fab-pill__pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(10, 92, 54, 0.4);
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: none;
+  z-index: 1;
+  animation: svpFabPulse 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+.svp-fab-pill__pulse--2 {
+  animation-delay: 1.4s;
+  background: rgba(201, 162, 75, 0.3);
+}
+
+@keyframes svpFabPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.1);
+    opacity: 0;
+  }
+}
+
+/* Text Content Stack */
+.svp-fab-pill__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 4px;
+}
+
+.svp-fab-pill__title {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.svp-fab-pill__sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f7d27e;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.svp-live-dot--sm {
+  width: 6px;
+  height: 6px;
+}
+
+/* Embedded High-Converting CTA Button */
+.svp-fab-pill__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #f3cf7a 0%, #c9a24b 100%);
+  color: #064024;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.svp-fab-pill__cta-btn:hover {
+  background: #ffffff;
+  color: #0a5c36;
+  transform: translateX(1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.svp-fab-pill__cta-btn:active {
+  transform: scale(0.96);
+}
+
+/* Close Button on the Floating Pill */
+.svp-fab-pill__close-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  margin-left: -2px;
+  transition: all 0.18s ease;
+}
+
+.svp-fab-pill__close-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.svp-fab-pill__close-btn:active {
+  transform: scale(0.92);
+}
+
+/* ── Responsive Adaptations ── */
+@media (max-width: 600px) {
+  .svp-popup {
+    bottom: 14px;
+    right: 14px;
+    left: 14px;
+    width: auto;
+    max-width: 380px;
+    margin: 0 auto;
+    padding: 16px 16px;
+    transform-origin: bottom center;
+  }
+
+  .svp-close-btn {
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .svp-fab-wrap {
+    bottom: 14px;
+    right: 14px;
+    max-width: calc(100vw - 28px);
+  }
+
+  .svp-fab-pill {
+    gap: 7px;
+    padding: 5px 6px 5px 5px;
+  }
+
+  .svp-fab-pill__icon-box {
+    width: 32px;
+    height: 32px;
+  }
+
+  .svp-fab-pill__title {
+    font-size: 12px;
+  }
+
+  .svp-fab-pill__sub {
+    font-size: 10px;
+  }
+
+  .svp-fab-pill__cta-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  .svp-fab-pill__close-btn {
+    width: 24px;
+    height: 24px;
+  }
+
+  .svp-form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .svp-modal-card {
+    padding: 22px 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .svp-fab-pill__sub {
+    display: none;
+  }
+  .svp-fab-pill__title {
+    font-size: 11.5px;
+  }
+  .svp-fab-pill__cta-btn {
+    padding: 5px 8px;
+    font-size: 10.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .svp-popup,
+  .svp-fab-wrap,
+  .svp-fab-pill,
+  .svp-fab-pill__cta-btn,
+  .svp-fab-pill__close-btn {
+    transition-duration: 0.01ms !important;
+    animation: none !important;
+  }
+}
+

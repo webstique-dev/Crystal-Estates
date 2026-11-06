@@ -136,24 +136,36 @@ export default function PlotViewer({
     setPan({ x: newPanX, y: newPanY })
   }
 
-  // Mouse Wheel Zoom centered on cursor
-  const handleWheel = (e) => {
-    e.preventDefault()
-    if (!containerRef.current) return
+  // Mouse Wheel Zoom centered on cursor with non-passive listener to prevent browser warnings
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
 
-    const rect = containerRef.current.getBoundingClientRect()
-    const cursorX = e.clientX - rect.left
-    const cursorY = e.clientY - rect.top
+    const handleWheel = (e) => {
+      e.preventDefault()
 
-    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85
-    const newScale = Math.min(Math.max(scale * zoomFactor, 0.6), 4.0)
+      const rect = container.getBoundingClientRect()
+      const cursorX = e.clientX - rect.left
+      const cursorY = e.clientY - rect.top
 
-    const newPanX = cursorX - ((cursorX - pan.x) / scale) * newScale
-    const newPanY = cursorY - ((cursorY - pan.y) / scale) * newScale
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85
 
-    setScale(newScale)
-    setPan({ x: newPanX, y: newPanY })
-  }
+      setScale((prevScale) => {
+        const newScale = Math.min(Math.max(prevScale * zoomFactor, 0.6), 4.0)
+        setPan((prevPan) => {
+          const newPanX = cursorX - ((cursorX - prevPan.x) / prevScale) * newScale
+          const newPanY = cursorY - ((cursorY - prevPan.y) / prevScale) * newScale
+          return { x: newPanX, y: newPanY }
+        })
+        return newScale
+      })
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      container.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
 
   // Mouse Drag Handlers
   const handleMouseDown = (e) => {
@@ -370,7 +382,6 @@ export default function PlotViewer({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}

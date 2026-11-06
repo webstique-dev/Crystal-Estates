@@ -347,7 +347,12 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                   <span style={{ display: 'block', fontSize: '12px', color: 'var(--muted)', textTransform: 'uppercase', fontWeight: 600 }}>
                     Availability Status
                   </span>
-                  <strong style={{ fontSize: '15px', color: 'var(--green-600)' }}>
+                  <strong
+                    style={{
+                      fontSize: '15px',
+                      color: project.status === 'Sold Out' ? '#dc2626' : 'var(--green-600)',
+                    }}
+                  >
                     {project.status}
                   </strong>
                 </div>
@@ -577,6 +582,7 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                               controls
                               src={vidUrl}
                               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              suppressHydrationWarning
                             />
                           ) : (
                             <iframe

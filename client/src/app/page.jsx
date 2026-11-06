@@ -1,19 +1,22 @@
 import HeroSection from '../components/sections/HeroSection'
-import StatsBar from '../components/sections/StatsBar'
+import About from '../components/sections/About'
 import FeaturedProjectsSection from '../components/sections/FeaturedProjectsSection'
-import ServicesOverview from '../components/sections/ServicesOverview'
+import PropertyCategoriesSection from '../components/sections/PropertyCategoriesSection'
 import WhyChooseUs from '../components/sections/WhyChooseUs'
-import EnquirySection from '../components/sections/EnquirySection'
+import Process from '../components/sections/Process'
 import TestimonialsSection from '../components/TestimonialsSection'
+import LatestUpdatesSection from '../components/sections/LatestUpdatesSection'
+import EnquirySection from '../components/sections/EnquirySection'
+import ContactInfoSection from '../components/sections/ContactInfoSection'
 
 export const metadata = {
-  title: 'Crystal Estates | Own Land You Can Trust | ASSETS CREATOR Chennai',
+  title: 'Crystal Estates | Creating Assets. Building Trust. Securing Your Future.',
   description:
-    'Verified plots and farmland around Chennai with clear titles and complete documentation. CMDA and DTCP approved residential layouts and sandalwood agro-forestry farmland.',
+    'Discover premium residential plots, agricultural lands and valuable land investment opportunities around Chennai with Crystal Estates — ASSETS CREATOR.',
   openGraph: {
-    title: 'Crystal Estates | Own Land You Can Trust | ASSETS CREATOR',
+    title: 'Crystal Estates | Creating Assets. Building Trust. Securing Your Future.',
     description:
-      'Verified plots and farmland around Chennai with clear titles and complete documentation.',
+      'Discover premium residential plots, agricultural lands and valuable land investment opportunities around Chennai with Crystal Estates.',
     url: 'https://crystalestates.in',
     siteName: 'Crystal Estates',
     images: [
@@ -21,7 +24,7 @@ export const metadata = {
         url: '/images/vedanthangal.jpg',
         width: 1200,
         height: 630,
-        alt: 'Crystal Estates Sandalwood Farm Land Chennai',
+        alt: 'Crystal Estates Chennai',
       },
     ],
   },
@@ -30,29 +33,62 @@ export const metadata = {
 export default function HomePage() {
   return (
     <main>
-      {/* 1. HeroSection */}
+      {/* Hero banner */}
       <HeroSection
-        heading="Own Land You Can Trust"
-        subtext="Verified plots and farmland around Chennai with clear titles and complete documentation."
+        heading="Creating Assets. Building Trust. Securing Your Future."
+        subheading="Discover premium residential plots, agricultural lands and valuable land investment opportunities with Crystal Estates."
       />
 
-      {/* 2. StatsBar */}
-      <StatsBar />
+      {/* 1. About Crystal Estates */}
+      <About />
 
-      {/* 3. Featured ProjectGrid + ProjectCard */}
-      <FeaturedProjectsSection />
+      {/* 2. Featured projects */}
+      <FeaturedProjectsSection
+        title="Featured Projects"
+        subtitle="CMDA & DTCP approved plots and managed sandalwood farm lands across prime Chennai corridors."
+      />
 
-      {/* 4. ServicesOverview */}
-      <ServicesOverview />
+      {/* 3. Property categories */}
+      <PropertyCategoriesSection
+        title="Property Categories"
+        subtitle="Explore diversified land opportunities tailored for residential living, agro-forestry, and high-yield capital appreciation."
+      />
 
-      {/* 5. WhyChooseUs */}
-      <WhyChooseUs />
+      {/* 4. Why choose Crystal Estates? */}
+      <WhyChooseUs
+        title="Why Choose Crystal Estates?"
+        subtitle="Six core pillars that make us Chennai’s most trusted land and plot asset creator."
+      />
 
-      {/* 6. EnquirySection */}
-      <EnquirySection />
+      {/* 5. Our business process */}
+      <Process
+        title="Our Business Process"
+        text="A transparent, hassle-free path to owning your approved residential plot and farmland asset in Chennai."
+      />
 
-      {/* 7. TestimonialsSection */}
-      <TestimonialsSection />
+      {/* 6. Customer testimonials */}
+      <TestimonialsSection
+        title="Customer Testimonials"
+        subtitle="Authentic stories and reviews from land owners and investors across Chennai."
+      />
+
+      {/* 7. Latest property updates */}
+      <LatestUpdatesSection
+        title="Latest Property Updates"
+        subtitle="Market trends, regulatory updates, CMDA/DTCP insights, and land appreciation analysis."
+      />
+
+      {/* 8. Enquiry form */}
+      <EnquirySection
+        title="Enquiry Form"
+        subtitle="Connect with our land advisors for clear-title documentation, site visits, and transparent pricing."
+      />
+
+      {/* 9. Contact information */}
+      <ContactInfoSection
+        title="Contact Information"
+        subtitle="Visit our registered office in Valasaravakkam, Chennai or schedule a private site inspection tour with our land advisors."
+      />
     </main>
   )
 }
