@@ -2,12 +2,18 @@
 node_modules/
 client/node_modules/
 server/node_modules/
+crm/node_modules/
 
-# Next.js Build Outputs
+# Uploads
+server/uploads/
+client/public/images/plots/
+
+# Next.js / Vite Build Outputs
 .next/
 client/.next/
 client/out/
 client/build/
+crm/dist/
 dist/
 
 # Environment Variables
@@ -17,6 +23,8 @@ client/.env*.local
 client/.env
 server/.env
 server/.env*.local
+crm/.env
+crm/.env*.local
 
 # Testing & Reports
 coverage/

@@ -42,7 +42,7 @@ crystal-estates/
 
 ---
 
-## 🚀 Quick Start (Running Both Together)
+## 🚀 Quick Start (Running All Three Together)
 
 ### 1. Install Dependencies
 ```bash
@@ -55,7 +55,7 @@ npm run dev
 ```
 - **Backend Server:** [http://localhost:5000](http://localhost:5000)
 - **Frontend Client:** [http://localhost:3000](http://localhost:3000)
-- API requests made by the client to `/api/*` are automatically proxied to `http://localhost:5000/api/*`.
+- **CRM Portal:** [http://localhost:5173](http://localhost:5173)
 
 ---
 
@@ -96,6 +96,19 @@ npm run dev:client
 Build client for production:
 ```bash
 npm run build
+```
+
+---
+
+### Run CRM Portal Only
+```bash
+# Navigate to crm
+cd crm
+npm run dev
+```
+Or from the root directory:
+```bash
+npm run dev:crm
 ```
 
 ---

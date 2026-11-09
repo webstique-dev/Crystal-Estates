@@ -9,9 +9,10 @@ const isWindows = process.platform === 'win32'
 const npmCmd = isWindows ? 'npm.cmd' : 'npm'
 
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-console.log('🚀 Starting Crystal Estates Full-Stack Environment')
+console.log('🚀 Starting Crystal Estates Full-Stack Ecosystem')
 console.log('   - Server: http://localhost:5000')
 console.log('   - Client: http://localhost:3000')
+console.log('   - CRM:    http://localhost:5173')
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
 
 const serverProcess = spawn(npmCmd, ['run', 'dev'], {
@@ -22,6 +23,12 @@ const serverProcess = spawn(npmCmd, ['run', 'dev'], {
 
 const clientProcess = spawn(npmCmd, ['run', 'dev'], {
   cwd: path.join(rootDir, 'client'),
+  stdio: ['inherit', 'pipe', 'pipe'],
+  shell: isWindows,
+})
+
+const crmProcess = spawn(npmCmd, ['run', 'dev'], {
+  cwd: path.join(rootDir, 'crm'),
   stdio: ['inherit', 'pipe', 'pipe'],
   shell: isWindows,
 })
@@ -43,15 +50,20 @@ pipeWithPrefix(serverProcess.stderr, '[SERVER:ERR]', '31') // Red
 pipeWithPrefix(clientProcess.stdout, '[CLIENT]', '36') // Cyan
 pipeWithPrefix(clientProcess.stderr, '[CLIENT:ERR]', '33') // Yellow
 
+pipeWithPrefix(crmProcess.stdout, '[CRM]', '32') // Green
+pipeWithPrefix(crmProcess.stderr, '[CRM:ERR]', '31') // Red
+
 function shutdown() {
-  console.log('\n🛑 Shutting down Crystal Estates services...')
+  console.log('\n🛑 Shutting down all Crystal Estates services...')
   try {
     if (isWindows) {
       if (serverProcess.pid) spawn('taskkill', ['/pid', String(serverProcess.pid), '/f', '/t'])
       if (clientProcess.pid) spawn('taskkill', ['/pid', String(clientProcess.pid), '/f', '/t'])
+      if (crmProcess.pid) spawn('taskkill', ['/pid', String(crmProcess.pid), '/f', '/t'])
     } else {
       serverProcess.kill('SIGINT')
       clientProcess.kill('SIGINT')
+      crmProcess.kill('SIGINT')
     }
   } catch (err) {
     // ignore shutdown errors
@@ -74,3 +86,8 @@ clientProcess.on('exit', (code) => {
   }
 })
 
+crmProcess.on('exit', (code) => {
+  if (code !== 0 && code !== null) {
+    console.error(`[CRM] exited with code ${code}`)
+  }
+})
