@@ -29,7 +29,10 @@ export default [
       'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]' }],
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true, allowExportNames: ['metadata', 'viewport'] },
+        {
+          allowConstantExport: true,
+          allowExportNames: ['metadata', 'viewport', 'generateMetadata', 'generateStaticParams'],
+        },
       ],
     },
   },

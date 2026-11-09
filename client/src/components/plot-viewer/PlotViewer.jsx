@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import Link from 'next/link'
 import {
   ZoomIn,
   ZoomOut,
@@ -8,7 +9,8 @@ import {
   Maximize2,
   Minimize2,
   X,
-  Info
+  Info,
+  ArrowLeft,
 } from 'lucide-react'
 import { WhatsAppIcon } from '../ui'
 import { KOLAPAKKAM_METADATA } from '../../data/kolapakkamPlots'
@@ -30,6 +32,7 @@ export default function PlotViewer({
   whatsappNumber = '919444280722',
   className = '',
   onPlotSelect = null,
+  backHref = null,
 }) {
   // Data state loaded purely from API or passed props
   const [plots, setPlots] = useState(initialPlots || [])
@@ -133,24 +136,36 @@ export default function PlotViewer({
     setPan({ x: newPanX, y: newPanY })
   }
 
-  // Mouse Wheel Zoom centered on cursor
-  const handleWheel = (e) => {
-    e.preventDefault()
-    if (!containerRef.current) return
+  // Mouse Wheel Zoom centered on cursor with non-passive listener to prevent browser warnings
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
 
-    const rect = containerRef.current.getBoundingClientRect()
-    const cursorX = e.clientX - rect.left
-    const cursorY = e.clientY - rect.top
+    const handleWheel = (e) => {
+      e.preventDefault()
 
-    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85
-    const newScale = Math.min(Math.max(scale * zoomFactor, 0.6), 4.0)
+      const rect = container.getBoundingClientRect()
+      const cursorX = e.clientX - rect.left
+      const cursorY = e.clientY - rect.top
 
-    const newPanX = cursorX - ((cursorX - pan.x) / scale) * newScale
-    const newPanY = cursorY - ((cursorY - pan.y) / scale) * newScale
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85
 
-    setScale(newScale)
-    setPan({ x: newPanX, y: newPanY })
-  }
+      setScale((prevScale) => {
+        const newScale = Math.min(Math.max(prevScale * zoomFactor, 0.6), 4.0)
+        setPan((prevPan) => {
+          const newPanX = cursorX - ((cursorX - prevPan.x) / prevScale) * newScale
+          const newPanY = cursorY - ((cursorY - prevPan.y) / prevScale) * newScale
+          return { x: newPanX, y: newPanY }
+        })
+        return newScale
+      })
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      container.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
 
   // Mouse Drag Handlers
   const handleMouseDown = (e) => {
@@ -235,6 +250,18 @@ export default function PlotViewer({
     }
   }
 
+  // Sync Fullscreen with browser native fullscreenchange
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+      setTimeout(() => {
+        handleResetZoom()
+      }, 100)
+    }
+    document.addEventListener('fullscreenchange', handleFsChange)
+    return () => document.removeEventListener('fullscreenchange', handleFsChange)
+  }, [handleResetZoom])
+
   // Close modal on ESC key
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -270,10 +297,23 @@ export default function PlotViewer({
       {/* ── Top Header & Filter Bar (Template Styled) ── */}
       <div className="plot-viewer__header">
         <div className="plot-viewer__title-group">
-          <h3 className="plot-viewer__title">
-            {metadata.title}
-            <span className="plot-viewer__badge">Interactive Plan</span>
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {backHref && (
+              <Link
+                href={backHref}
+                className="plot-viewer__back-btn"
+                title="Back to Project Details"
+                aria-label="Back to Project Details"
+              >
+                <ArrowLeft size={15} />
+                <span className="pv-back-text">Back</span>
+              </Link>
+            )}
+            <h3 className="plot-viewer__title">
+              {metadata.title}
+              <span className="plot-viewer__badge">Interactive Plan</span>
+            </h3>
+          </div>
           <p className="plot-viewer__subtitle">
             S.No: {metadata.sNo} • {metadata.village}, {metadata.taluk} Taluk
           </p>
@@ -342,7 +382,6 @@ export default function PlotViewer({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -506,11 +545,13 @@ export default function PlotViewer({
           </button>
         </div>
 
-        {/* ── Instruction Pill ── */}
-        <div className="plot-viewer__helper-pill">
-          <Info size={14} />
-          <span>Click & drag to pan • Scroll to zoom • Click plot for details</span>
-        </div>
+        {/* ── Instruction Pill (Hidden when plot details card is open) ── */}
+        {!selectedPlot && (
+          <div className="plot-viewer__helper-pill">
+            <Info size={14} />
+            <span>Click & drag to pan • Scroll to zoom • Click plot for details</span>
+          </div>
+        )}
 
         {/* ── Hover Tooltip Card ── */}
         {hoveredPlot && !isDragging && (
@@ -539,90 +580,67 @@ export default function PlotViewer({
           </div>
         )}
 
-        {/* ── Details Popup Card (Modal) ── */}
+        {/* ── Selected Plot Tiny Sweet Card (Bottom-Left Corner) ── */}
         {selectedPlot && (
           <div
-            className="pv-modal-backdrop"
-            onClick={() => setSelectedPlot(null)}
+            className="pv-tiny-card"
+            role="region"
+            aria-label={`Plot No ${selectedPlot.plotNo} Details`}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
-            <div
-              className="pv-modal-card"
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="modal-plot-title"
-            >
-              <button
-                type="button"
-                className="pv-modal-close-btn"
-                onClick={() => setSelectedPlot(null)}
-                aria-label="Close dialog"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="pv-modal__header">
-                <h3 id="modal-plot-title" className="pv-modal__plot-title">
-                  Plot No {selectedPlot.plotNo}
-                </h3>
-                <span className={`pv-modal__badge pv-modal__badge--${selectedPlot.status}`}>
+            {/* Header: Title + Status + Close */}
+            <div className="pv-tiny-card__header">
+              <div className="pv-tiny-card__title-wrap">
+                <span className="pv-tiny-card__title">Plot {selectedPlot.plotNo}</span>
+                <span className={`pv-tiny-card__badge pv-tiny-card__badge--${selectedPlot.status}`}>
                   {selectedPlot.status}
                 </span>
               </div>
-              <p className="pv-modal__project-sub">
-                {metadata.title} • {metadata.village} Layout
-              </p>
-
-              {/* Specs Grid */}
-              <div className="pv-modal__specs-grid">
-                <div className="pv-spec-box pv-spec-box--full">
-                  <div className="pv-spec-box__label">Total Extent / Area</div>
-                  <div className="pv-spec-box__val">{selectedPlot.area}</div>
-                </div>
-
-                <div className="pv-spec-box">
-                  <div className="pv-spec-box__label">Facing Direction</div>
-                  <div className="pv-spec-box__val">{selectedPlot.facing}</div>
-                </div>
-
-                <div className="pv-spec-box">
-                  <div className="pv-spec-box__label">Dimensions</div>
-                  <div className="pv-spec-box__val">
-                    {selectedPlot.width} × {selectedPlot.length}
-                  </div>
-                </div>
-
-                {selectedPlot.price && (
-                  <div className="pv-spec-box pv-spec-box--full">
-                    <div className="pv-spec-box__label">Estimated Price / Guide Value</div>
-                    <div className="pv-spec-box__val" style={{ color: 'var(--green-900, #0a5c36)' }}>
-                      {selectedPlot.price}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pv-modal__actions">
-                <a
-                  href={getWhatsAppUrl(selectedPlot)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="pv-btn-whatsapp"
-                >
-                  <WhatsAppIcon size={20} />
-                  Contact on WhatsApp
-                </a>
-
-                <button
-                  type="button"
-                  className="pv-btn-secondary"
-                  onClick={() => setSelectedPlot(null)}
-                >
-                  Close Details
-                </button>
-              </div>
+              <button
+                type="button"
+                className="pv-tiny-card__close"
+                onClick={() => setSelectedPlot(null)}
+                aria-label="Close"
+                title="Close"
+              >
+                <X size={14} />
+              </button>
             </div>
+
+            {/* Quick Compact Specs Grid */}
+            <div className="pv-tiny-card__specs">
+              <div className="pv-tiny-card__spec">
+                <span className="pv-tiny-card__label">Extent</span>
+                <strong className="pv-tiny-card__val">{selectedPlot.area}</strong>
+              </div>
+              <div className="pv-tiny-card__spec">
+                <span className="pv-tiny-card__label">Facing</span>
+                <strong className="pv-tiny-card__val">{selectedPlot.facing}</strong>
+              </div>
+              <div className="pv-tiny-card__spec">
+                <span className="pv-tiny-card__label">Size</span>
+                <strong className="pv-tiny-card__val">{selectedPlot.width} × {selectedPlot.length}</strong>
+              </div>
+              {selectedPlot.price && (
+                <div className="pv-tiny-card__spec">
+                  <span className="pv-tiny-card__label">Price</span>
+                  <strong className="pv-tiny-card__val pv-tiny-card__val--price">{selectedPlot.price}</strong>
+                </div>
+              )}
+            </div>
+
+            {/* Compact WhatsApp Action */}
+            <a
+              href={getWhatsAppUrl(selectedPlot)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pv-tiny-card__btn-wa"
+            >
+              <WhatsAppIcon size={15} />
+              <span>Contact on WhatsApp</span>
+            </a>
           </div>
         )}
       </div>

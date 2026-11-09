@@ -3,40 +3,95 @@
 import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
+import Link from 'next/link'
 export { LeafDecor } from './LeafDecor'
+export { PageHero } from './PageHero'
+export { default as SiteVisitPopup } from './SiteVisitPopup'
 
 /* Reusable layout primitives & GSAP-powered animated building blocks */
 
-export function Container({ children, className = '' }) {
-  return <div className={`container ${className}`}>{children}</div>
+export function Container({ children, className = '', ...props }) {
+  return <div className={`container ${className}`.trim()} {...props}>{children}</div>
 }
 
-export function Section({ id, variant = '', className = '', children, ...rest }) {
-  const cls = ['section', variant && `section--${variant}`, className].filter(Boolean).join(' ')
+export function SectionHeading({ eyebrow, title, subtitle, text, center = false, className = '' }) {
+  const description = subtitle || text
   return (
-    <section id={id} className={cls} {...rest}>
-      <Container>{children}</Container>
-    </section>
-  )
-}
-
-export function SectionHeading({ eyebrow, title, text, center = false }) {
-  return (
-    <div className={`heading ${center ? 'heading--center' : ''}`}>
+    <div className={`heading ${center ? 'heading--center' : ''} ${className}`.trim()}>
       {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-      <h2>{title}</h2>
-      {text && <p>{text}</p>}
+      {title && <h2>{title}</h2>}
+      {description && <p>{description}</p>}
     </div>
   )
 }
 
-export function Button({ as: Tag = 'button', variant = 'primary', size, block, className = '', children, ...rest }) {
-  const cls = ['btn', `btn--${variant}`, size && `btn--${size}`, block && 'btn--block', className].filter(Boolean).join(' ')
+export function Section({
+  id,
+  title,
+  subtitle,
+  eyebrow,
+  center = false,
+  variant = '',
+  className = '',
+  containerClassName = '',
+  headingClassName = '',
+  children,
+  ...rest
+}) {
+  const cls = ['section', variant && `section--${variant}`, className].filter(Boolean).join(' ')
+  return (
+    <section id={id} className={cls} {...rest}>
+      <Container className={containerClassName}>
+        {(title || subtitle || eyebrow) && (
+          <SectionHeading
+            eyebrow={eyebrow}
+            title={title}
+            subtitle={subtitle}
+            center={center}
+            className={headingClassName}
+          />
+        )}
+        {children}
+      </Container>
+    </section>
+  )
+}
+
+export function Button({
+  as: Tag = 'button',
+  variant = 'primary',
+  size,
+  block = false,
+  href,
+  className = '',
+  children,
+  ...rest
+}) {
+  const cls = [
+    'btn',
+    `btn--${variant}`,
+    size && `btn--${size}`,
+    block && 'btn--block',
+    className,
+  ].filter(Boolean).join(' ')
+
+  if (href) {
+    return (
+      <Link href={href} className={cls} {...rest}>
+        {children}
+      </Link>
+    )
+  }
+
   return <Tag className={cls} {...rest}>{children}</Tag>
 }
 
-export function Badge({ tone = '', children }) {
-  return <span className={`badge ${tone ? `badge--${tone}` : ''}`}>{children}</span>
+export function Badge({ tone = 'primary', className = '', children, ...rest }) {
+  return (
+    <span className={`badge ${tone ? `badge--${tone}` : ''} ${className}`.trim()} {...rest}>
+      {children}
+    </span>
+  )
 }
 
 export function Field({ label, children }) {

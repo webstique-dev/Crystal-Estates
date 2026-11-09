@@ -1,8 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  turbopack: {
-    root: '.',
+  async redirects() {
+    return [
+      {
+        source: '/testimonials',
+        destination: '/',
+        permanent: true,
+      },
+    ]
   },
   async rewrites() {
     const serverUrl = process.env.SERVER_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'

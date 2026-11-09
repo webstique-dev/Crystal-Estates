@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { X, ChevronLeft, ChevronRight, Eye, Calendar } from 'lucide-react'
 import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
@@ -168,9 +169,9 @@ export default function Gallery() {
       {/* Footer CTA */}
       <div className="gallery-cta">
         <span>Want to experience our lands in person?</span>
-        <a href="#contact" className="btn btn--gold btn--sm">
+        <Link href="/contact" className="btn btn--gold btn--sm">
           <Calendar size={14} /> Book a Free Site Visit
-        </a>
+        </Link>
       </div>
 
       {/* Lightbox Modal */}

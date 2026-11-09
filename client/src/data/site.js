@@ -4,7 +4,7 @@
 
 export const business = {
   name: 'Crystal Estates',
-  tagline: 'Farm Lands • Plots • Premium Living',
+  tagline: 'ASSETS CREATOR',
   flagship: 'Vedanthangal Sandalwood Farm Land – 15 Acres',
   address: {
     line1: 'No. 9, A.K.R. Nagar Main Road',
@@ -24,12 +24,59 @@ export const business = {
 }
 
 export const navLinks = [
-  { label: 'Home', href: '#home' },
-  { label: 'About', href: '#about' },
-  { label: 'Projects', href: '#projects' },
-  { label: 'Gallery', href: '#gallery' },
-  { label: 'Why Sandalwood', href: '#why-sandalwood' },
-  { label: 'Contact', href: '#contact' },
+  { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
+  { label: 'Projects', href: '/projects' },
+  { label: 'Services', href: '/services' },
+  { label: 'Gallery', href: '/gallery' },
+  { label: 'News', href: '/news' },
+  { label: 'Sell Your Land', href: '/sell-your-land' },
+  { label: 'Contact', href: '/contact' },
+]
+
+export const services = [
+  {
+    id: 'residential-plots',
+    title: 'Residential Plots',
+    description: 'CMDA and DTCP approved plotted lands in rapidly appreciating residential corridors across Chennai with clear demarcation, blacktop roads, and ready for immediate registration.',
+    href: '/services',
+  },
+  {
+    id: 'farm-land',
+    title: 'Agricultural & Farm Land',
+    description: 'Managed agricultural land and high-yield agro-forestry sandalwood estates offering compounding capital appreciation, continuous maintenance, drip irrigation, and individual patta.',
+    href: '/services',
+  },
+  {
+    id: 'registered-land',
+    title: 'Registered Land & Clear Titles',
+    description: '100% legally vetted registered lands with verified parent title documents, encumbrance certificates, revenue records, and spot registration guidance.',
+    href: '/services',
+  },
+  {
+    id: 'individual-plots',
+    title: 'Individual Plots',
+    description: 'Independent individual plot holdings suited for customized investment sizes, long-term wealth preservation, and standalone asset ownership.',
+    href: '/services',
+  },
+  {
+    id: 'bulk-land',
+    title: 'Bulk Land & Acreage',
+    description: 'Large contiguous multi-acre parcels suitable for agro-forestry, institutional investment, private estates, and generational land banking.',
+    href: '/services',
+  },
+  {
+    id: 'purchase-resale',
+    title: 'Land Purchase & Resale',
+    description: 'End-to-end strategic land acquisition, precise valuation assessments, title due diligence, and reliable resale facilitation for landowners and investors.',
+    href: '/services',
+  },
+  {
+    id: 'brokerage-advisory',
+    title: 'Land Brokerage & Title Advisory',
+    description: 'Transparent land brokerage with zero hidden fees, government registration facilitation, patta transfer assistance, and comprehensive survey verification.',
+    href: '/services',
+  },
 ]
 
 export const stats = [
@@ -43,6 +90,7 @@ export const stats = [
 export const projects = [
   {
     id: 'ce-flagship',
+    slug: 'vedanthangal-sandalwood-farm-land',
     name: 'Vedanthangal Sandalwood Farm Land',
     type: 'Farm Land',
     category: 'Ongoing',
@@ -54,7 +102,7 @@ export const projects = [
     price: 3600000,
     priceDisplay: 'Starting at ₹ 36 Lakhs',
     approval: '100% Clear Titles & Individual Patta',
-    status: 'Booking Open',
+    status: 'Sold Out',
     featured: true,
     isFlagship: true,
     image: '/images/vedanthangal.jpg',
@@ -72,6 +120,7 @@ export const projects = [
   },
   {
     id: 'ce-002',
+    slug: 'kolapakkam',
     name: 'Kolapakkam',
     type: 'Residential Plot',
     category: 'Ongoing',
@@ -89,10 +138,11 @@ export const projects = [
     hasLayoutMap: true,
     image: '/images/kolapakkam.jpg',
     description:
-      'Premium CMDA-approved residential plots in fast-developing Kolapakkam, just minutes from Porur and Chennai Trade Centre. Features full interactive SVG parcel map, street lighting, and immediate construction readiness.',
+      'Premium CMDA-approved residential plots in fast-developing Kolapakkam, just minutes from Porur and Chennai Trade Centre. Features full interactive SVG parcel map, street lighting, and immediate registration readiness.',
   },
   {
     id: 'ce-001',
+    slug: 'somamangalam',
     name: 'Somamangalam',
     type: 'Residential Plot',
     category: 'Ongoing',
@@ -113,6 +163,7 @@ export const projects = [
   },
   {
     id: 'ce-003',
+    slug: 'brammadesam',
     name: 'Brammadesam',
     type: 'Residential Plot',
     category: 'Ongoing',
@@ -125,7 +176,7 @@ export const projects = [
     price: 4950000,
     priceDisplay: 'Starting at ₹ 49.5 Lakhs',
     approval: 'DTCP Approved',
-    status: 'Few Left',
+    status: 'Sold Out',
     featured: true,
     image: '/images/brammadesam.jpg',
     description:
@@ -133,9 +184,10 @@ export const projects = [
   },
   {
     id: 'ce-004',
+    slug: 'ozhalai-panchayath',
     name: 'Ozhalai Panchayath',
     type: 'Residential Plot',
-    category: 'Upcoming',
+    category: 'Completed',
     location: 'Ozhalai Panchayath',
     area: '1,800 sq.ft',
     extentNumber: 1800,
@@ -145,7 +197,7 @@ export const projects = [
     price: 6300000,
     priceDisplay: 'Starting at ₹ 63 Lakhs',
     approval: 'RERA Registered',
-    status: 'Available',
+    status: 'Sold Out',
     featured: true,
     image: '/images/ozhalai-panchayath.jpg',
     description:
@@ -244,7 +296,7 @@ export const galleryItems = [
     title: 'Somamangalam Gated Community',
     category: 'Layouts',
     image: '/images/somamangalam.jpg',
-    caption: 'DTCP-approved residential parcel ready for immediate home construction.',
+    caption: 'DTCP-approved residential parcel ready for immediate plot demarcation and registration.',
   },
   {
     id: 5,

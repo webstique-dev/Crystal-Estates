@@ -75,6 +75,9 @@ export default function About() {
 
       {/* Centered Grand Editorial Heading matching reference */}
       <div className="excellence-sec__heading">
+        <span className="heading__eyebrow" style={{ display: 'block', marginBottom: '8px' }}>
+          ABOUT CRYSTAL ESTATES
+        </span>
         <h2>
           Experience Excellence<br />
           In Farmland & Real Estate
@@ -94,7 +97,7 @@ export default function About() {
           </div>
 
           <div>
-            <Button as="a" href="#contact" variant="dark" size="sm">
+            <Button href="/contact" variant="dark" size="sm">
               Talk to Our Team
             </Button>
           </div>

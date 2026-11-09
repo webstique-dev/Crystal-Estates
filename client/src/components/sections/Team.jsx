@@ -81,7 +81,7 @@ export default function Team() {
             Our team of experienced real estate professionals is committed to helping you find the perfect plot or investment property with 100% verified documentation and honest market advisory.
           </p>
           <div className="team-content__cta">
-            <Button as="a" href="#contact" variant="light" size="sm">
+            <Button href="/contact" variant="light" size="sm">
               Book a Site Visit <ArrowRight size={16} />
             </Button>
           </div>
