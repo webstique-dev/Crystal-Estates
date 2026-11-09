@@ -104,9 +104,7 @@ export default function Plots({ filters = {}, onEnquire, onReset }) {
       .then((res) => res.json())
       .then((data) => {
         if (isMounted && data.success && data.plots?.length > 0) {
-          const flagship = staticProjects.find((p) => p.isFlagship)
-          const merged = flagship ? [flagship, ...data.plots.filter((p) => !p.isFlagship)] : data.plots
-          setDbPlots(merged)
+          setDbPlots(data.plots)
         }
       })
       .catch((err) => {

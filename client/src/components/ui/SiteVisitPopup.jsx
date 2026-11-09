@@ -13,13 +13,29 @@ import { WhatsAppIcon } from './index'
 import { business, projects } from '../../data/site'
 import './SiteVisitPopup.css'
 
-// Filter only currently available (non-sold-out) projects for site visits
+// Initial project list fallback
 const availableProjects = projects.filter((p) => p.status !== 'Sold Out')
 
 export default function SiteVisitPopup() {
   const [isVisible, setIsVisible] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [formSubmitted, setFormSubmitted] = useState(false)
+  const [projectList, setProjectList] = useState(availableProjects)
+
+  // Fetch real projects dynamically
+  useEffect(() => {
+    fetch('/api/plots')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.plots) && data.plots.length > 0) {
+          const avail = data.plots.filter((p) => p.status !== 'Sold Out' && p.status !== 'Sold')
+          if (avail.length > 0) {
+            setProjectList(avail)
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   // Form State: defaults to the first available (active) project
   const [formData, setFormData] = useState({
@@ -253,9 +269,9 @@ export default function SiteVisitPopup() {
                       value={formData.project}
                       onChange={(e) => setFormData({ ...formData, project: e.target.value })}
                     >
-                      {availableProjects.map((p) => (
-                        <option key={p.id || p.slug} value={p.name}>
-                          {p.name} ({p.location} • {p.approval})
+                      {projectList.map((p) => (
+                        <option key={p.id || p.slug || p.name} value={p.name}>
+                          {p.name} ({p.location || 'Chennai'} {p.approval ? `• ${p.approval}` : ''})
                         </option>
                       ))}
                       <option value="All Available Chennai Land Projects">

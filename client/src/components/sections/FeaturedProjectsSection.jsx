@@ -3,14 +3,18 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { Section, Container, Button } from '../ui'
 import { ProjectGrid } from '../projects/ProjectGrid'
-import { projects } from '../../data/site'
+import { fetchPlots } from '../../lib/api'
 
-export default function FeaturedProjectsSection({
+export default async function FeaturedProjectsSection({
   title = 'Featured Land & Plot Projects',
-  subtitle = 'CMDA & DTCP approved plots and managed sandalwood farm lands across prime Chennai corridors.',
+  subtitle = 'CMDA & DTCP approved residential plots, agricultural lands, and investment corridors across prime Chennai corridors.',
   className = '',
 }) {
-  const featured = projects.filter((p) => p.featured).slice(0, 4)
+  const plots = await fetchPlots()
+  const featured =
+    Array.isArray(plots) && plots.length > 0
+      ? plots.filter((p) => p.featured !== false).slice(0, 4)
+      : []
 
   return (
     <Section
@@ -31,4 +35,3 @@ export default function FeaturedProjectsSection({
     </Section>
   )
 }
-

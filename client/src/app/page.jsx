@@ -9,6 +9,8 @@ import LatestUpdatesSection from '../components/sections/LatestUpdatesSection'
 import EnquirySection from '../components/sections/EnquirySection'
 import ContactInfoSection from '../components/sections/ContactInfoSection'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Crystal Estates | Creating Assets. Building Trust. Securing Your Future.',
   description:

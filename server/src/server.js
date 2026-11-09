@@ -7,6 +7,8 @@ import plotsRouter from './routes/plots.js'
 import kolapakkamRouter from './routes/kolapakkam.js'
 import uploadRouter from './routes/upload.js'
 import layoutRouter from './routes/layout.js'
+import leadsRouter from './routes/leads.js'
+import authRouter from './routes/auth.js'
 import { getDb, closeDb } from './config/db.js'
 
 dotenv.config()
@@ -87,9 +89,11 @@ app.use((req, res, next) => {
   next()
 })
 
-// Serve static layout SVGs and plot images
+// Serve static layout SVGs, plot images, documents and videos
 app.use('/plots', express.static(path.join(rootDir, 'client/public/plots')))
 app.use('/images', express.static(path.join(rootDir, 'client/public/images')))
+app.use('/documents', express.static(path.join(rootDir, 'client/public/documents')))
+app.use('/videos', express.static(path.join(rootDir, 'client/public/videos')))
 
 // Root & Health check
 app.get('/', (req, res) => {
@@ -129,6 +133,42 @@ app.use('/api/upload', uploadRouter)
 app.use('/api/plots', layoutRouter)
 app.use('/api/plots/kolapakkam', kolapakkamRouter)
 app.use('/api/plots', plotsRouter)
+app.use('/api/leads', leadsRouter)
+app.use('/api/auth', authRouter)
+
+// Direct website enquiry endpoint saving into leads collection
+app.post('/api/enquiry', async (req, res) => {
+  try {
+    const { name, phone, email, interest, message } = req.body
+    if (!name || !phone) {
+      return res.status(400).json({ success: false, error: 'Name and phone are required' })
+    }
+    const db = await getDb()
+    const id = `lead-${Date.now()}`
+    const newLead = {
+      id,
+      name: name.trim(),
+      phone: (phone || '').trim(),
+      email: (email || '').trim(),
+      property: (interest || 'General Enquiry').trim(),
+      stage: 'new',
+      source: 'Website',
+      budget: 0,
+      budgetFormatted: 'TBD',
+      assignedAgent: { name: 'Arun Kumar', initials: 'AK', color: '#DC2626' },
+      followUpDate: 'Today',
+      advanceReceived: null,
+      notes: message || 'Submitted via website enquiry form',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    await db.collection('leads').insertOne(newLead)
+    return res.status(201).json({ success: true, lead: newLead })
+  } catch (err) {
+    console.error('Error saving website enquiry:', err.message)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
 
 // 404 Handler
 app.use((req, res) => {

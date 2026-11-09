@@ -13,30 +13,52 @@ const router = Router()
 // Destination folders
 const clientPlotsDir = path.join(rootDir, 'client/public/plots')
 const clientImagesDir = path.join(rootDir, 'client/public/images/plots')
+const clientDocumentsDir = path.join(rootDir, 'client/public/documents')
+const clientVideosDir = path.join(rootDir, 'client/public/videos')
+
+const crmPlotsDir = path.join(rootDir, 'crm/public/plots')
+const crmImagesDir = path.join(rootDir, 'crm/public/images/plots')
+const crmDocumentsDir = path.join(rootDir, 'crm/public/documents')
+const crmVideosDir = path.join(rootDir, 'crm/public/videos')
+
 const serverUploadsPlotsDir = path.join(rootDir, 'server/uploads/plots')
 const serverUploadsImagesDir = path.join(rootDir, 'server/uploads/images')
+const serverUploadsDocumentsDir = path.join(rootDir, 'server/uploads/documents')
+const serverUploadsVideosDir = path.join(rootDir, 'server/uploads/videos')
 
 // Ensure all upload directories exist
-for (const dir of [clientPlotsDir, clientImagesDir, serverUploadsPlotsDir, serverUploadsImagesDir]) {
+const allDirs = [
+  clientPlotsDir,
+  clientImagesDir,
+  clientDocumentsDir,
+  clientVideosDir,
+  crmPlotsDir,
+  crmImagesDir,
+  crmDocumentsDir,
+  crmVideosDir,
+  serverUploadsPlotsDir,
+  serverUploadsImagesDir,
+  serverUploadsDocumentsDir,
+  serverUploadsVideosDir,
+]
+
+for (const dir of allDirs) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true })
   }
 }
 
-// Multer storage for raw multipart uploads
+// Multer storage for raw multipart uploads (allows up to 100MB for drone videos/large docs)
 const storage = multer.memoryStorage()
 const upload = multer({
   storage,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB max file size
+    fileSize: 100 * 1024 * 1024,
   },
 })
 
-/**
- * Helper to safely sanitize filenames and slugs
- */
 function sanitizeSlug(str) {
-  if (!str) return `layout-${Date.now()}`
+  if (!str) return `item-${Date.now()}`
   return str
     .toLowerCase()
     .trim()
@@ -45,9 +67,6 @@ function sanitizeSlug(str) {
     .replace(/^-|-$/g, '')
 }
 
-/**
- * Extract SVG viewBox, width, and height from SVG string
- */
 function extractSvgDimensions(svgContent) {
   let viewBox = '0 0 1056 816'
   let width = 1056
@@ -75,8 +94,22 @@ function extractSvgDimensions(svgContent) {
 }
 
 /**
+ * Helper to write buffer safely to multiple destination folders
+ */
+function saveToDirs(dirs, filename, buffer) {
+  for (const dir of dirs) {
+    try {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+      fs.writeFileSync(path.join(dir, filename), buffer)
+    } catch (e) {
+      console.warn(`Could not write to ${dir}:`, e.message)
+    }
+  }
+}
+
+/**
  * POST /api/upload/image
- * Accepts image file (multipart or base64) and saves to both client/public and server/uploads
+ * Accepts image file (multipart or base64) and saves to client, crm, and server
  */
 router.post('/image', upload.single('image'), async (req, res) => {
   try {
@@ -85,12 +118,10 @@ router.post('/image', upload.single('image'), async (req, res) => {
     let ext = '.jpg'
 
     if (req.file) {
-      // Multipart upload
       buffer = req.file.buffer
       originalName = req.file.originalname
       ext = path.extname(originalName).toLowerCase() || '.jpg'
     } else if (req.body.imageBase64) {
-      // Base64 upload
       const base64Data = req.body.imageBase64.replace(/^data:image\/\w+;base64,/, '')
       buffer = Buffer.from(base64Data, 'base64')
       if (req.body.filename) {
@@ -105,13 +136,7 @@ router.post('/image', upload.single('image'), async (req, res) => {
     const safeBase = sanitizeSlug(path.basename(originalName, ext))
     const filename = `plot-${safeBase}-${timestamp}${ext}`
 
-    // Write to client/public/images/plots
-    const clientPath = path.join(clientImagesDir, filename)
-    fs.writeFileSync(clientPath, buffer)
-
-    // Write copy to server/uploads/images
-    const serverPath = path.join(serverUploadsImagesDir, filename)
-    fs.writeFileSync(serverPath, buffer)
+    saveToDirs([clientImagesDir, crmImagesDir, serverUploadsImagesDir], filename, buffer)
 
     const publicUrl = `/images/plots/${filename}`
 
@@ -123,6 +148,76 @@ router.post('/image', upload.single('image'), async (req, res) => {
     })
   } catch (err) {
     console.error('Image upload error:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+/**
+ * POST /api/upload/document
+ * Accepts property documents (PDF, DOC, DOCX, Patta, Legal Deeds)
+ */
+router.post('/document', upload.single('document'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No document file provided' })
+    }
+
+    const buffer = req.file.buffer
+    const originalName = req.file.originalname
+    const ext = path.extname(originalName).toLowerCase() || '.pdf'
+    const timestamp = Date.now()
+    const safeBase = sanitizeSlug(path.basename(originalName, ext))
+    const filename = `doc-${safeBase}-${timestamp}${ext}`
+
+    saveToDirs([clientDocumentsDir, crmDocumentsDir, serverUploadsDocumentsDir], filename, buffer)
+
+    const publicUrl = `/documents/${filename}`
+
+    return res.json({
+      success: true,
+      url: publicUrl,
+      filename,
+      name: originalName,
+      size: buffer.length,
+      sizeFormatted: `${(buffer.length / 1024).toFixed(1)} KB`,
+    })
+  } catch (err) {
+    console.error('Document upload error:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+/**
+ * POST /api/upload/video
+ * Accepts site drone videos or promotional video files (MP4, WEBM, MOV)
+ */
+router.post('/video', upload.single('video'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No video file provided' })
+    }
+
+    const buffer = req.file.buffer
+    const originalName = req.file.originalname
+    const ext = path.extname(originalName).toLowerCase() || '.mp4'
+    const timestamp = Date.now()
+    const safeBase = sanitizeSlug(path.basename(originalName, ext))
+    const filename = `video-${safeBase}-${timestamp}${ext}`
+
+    saveToDirs([clientVideosDir, crmVideosDir, serverUploadsVideosDir], filename, buffer)
+
+    const publicUrl = `/videos/${filename}`
+
+    return res.json({
+      success: true,
+      url: publicUrl,
+      filename,
+      name: originalName,
+      size: buffer.length,
+      sizeFormatted: `${(buffer.length / (1024 * 1024)).toFixed(1)} MB`,
+    })
+  } catch (err) {
+    console.error('Video upload error:', err)
     return res.status(500).json({ success: false, error: err.message })
   }
 })
@@ -153,20 +248,11 @@ router.post('/layout-svg', upload.single('svgFile'), async (req, res) => {
       })
     }
 
-    // Clean slug
     const cleanSlug = sanitizeSlug(slug)
     const filename = `${cleanSlug}-layout.svg`
-
-    // Extract viewBox and dimensions
     const { viewBox, width, height } = extractSvgDimensions(svgContent)
 
-    // Write to client/public/plots/<slug>-layout.svg
-    const clientSvgPath = path.join(clientPlotsDir, filename)
-    fs.writeFileSync(clientSvgPath, svgContent, 'utf-8')
-
-    // Write copy to server/uploads/plots/<slug>-layout.svg
-    const serverSvgPath = path.join(serverUploadsPlotsDir, filename)
-    fs.writeFileSync(serverSvgPath, svgContent, 'utf-8')
+    saveToDirs([clientPlotsDir, crmPlotsDir, serverUploadsPlotsDir], filename, Buffer.from(svgContent, 'utf-8'))
 
     const layoutBackgroundUrl = `/plots/${filename}`
 
@@ -178,25 +264,28 @@ router.post('/layout-svg', upload.single('svgFile'), async (req, res) => {
         {
           $set: {
             slug: cleanSlug,
-            name: projectName || cleanSlug.replace(/-/g, ' ').toUpperCase(),
+            name: projectName,
             layoutBackgroundUrl,
             viewBox,
             width,
             height,
             updatedAt: new Date(),
           },
+          $setOnInsert: {
+            createdAt: new Date(),
+          },
         },
         { upsert: true }
       )
     } catch (dbErr) {
-      console.warn('Could not update layout_metadata in MongoDB:', dbErr.message)
+      console.warn('MongoDB layout metadata upsert warning:', dbErr.message)
     }
 
     return res.json({
       success: true,
-      layoutBackgroundUrl,
-      filename,
       slug: cleanSlug,
+      filename,
+      layoutBackgroundUrl,
       viewBox,
       width,
       height,
@@ -217,7 +306,6 @@ router.get('/layouts', async (req, res) => {
     const db = await getDb()
     const layouts = await db.collection('layout_metadata').find({}, { projection: { _id: 0 } }).toArray()
 
-    // Also scan filesystem for existing SVGs in client/public/plots
     const files = fs.readdirSync(clientPlotsDir).filter((f) => f.endsWith('.svg'))
     const availableFiles = files.map((file) => ({
       filename: file,
@@ -236,4 +324,3 @@ router.get('/layouts', async (req, res) => {
 })
 
 export default router
-

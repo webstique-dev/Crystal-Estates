@@ -3,21 +3,14 @@ import { notFound } from 'next/navigation'
 import { PageHero } from '../../../components/ui'
 import PropertyDetailClient from '../../../components/projects/PropertyDetailClient'
 import TestimonialsSection from '../../../components/TestimonialsSection'
-import { projects } from '../../../data/site'
+import { fetchPlotBySlugOrId, fetchPlots } from '../../../lib/api'
 
-export function generateStaticParams() {
-  const params = []
-  for (const p of projects) {
-    if (p.slug) params.push({ slug: p.slug })
-    if (p.id && p.id !== p.slug) params.push({ slug: p.id })
-  }
-  return params
-}
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params
   const { slug } = resolvedParams || {}
-  const project = projects.find((p) => p.slug === slug || p.id === slug)
+  const project = await fetchPlotBySlugOrId(slug)
 
   if (!project) {
     return {
@@ -38,7 +31,7 @@ export async function generateMetadata({ params }) {
       siteName: 'Crystal Estates',
       images: [
         {
-          url: project.image || '/images/vedanthangal.jpg',
+          url: project.image || '/images/kolapakkam.jpg',
           width: 1200,
           height: 630,
           alt: project.name,
@@ -51,7 +44,10 @@ export async function generateMetadata({ params }) {
 export default async function PropertyDetailPage({ params }) {
   const resolvedParams = await params
   const { slug } = resolvedParams || {}
-  const project = projects.find((p) => p.slug === slug || p.id === slug)
+  const [project, allProjects] = await Promise.all([
+    fetchPlotBySlugOrId(slug),
+    fetchPlots(),
+  ])
 
   if (!project) {
     notFound()
@@ -61,7 +57,7 @@ export default async function PropertyDetailPage({ params }) {
     <main>
       <PageHero
         title={project.name}
-        subtitle={`${project.type} in ${project.location} • ${project.approval}`}
+        subtitle={`${project.type || 'Property'} in ${project.location} • ${project.approval || 'Verified'}`}
         breadcrumb={[
           { label: 'Home', href: '/' },
           { label: 'Projects', href: '/projects' },
@@ -69,7 +65,7 @@ export default async function PropertyDetailPage({ params }) {
         ]}
       />
 
-      <PropertyDetailClient initialProject={project} staticAllProjects={projects} />
+      <PropertyDetailClient initialProject={project} staticAllProjects={allProjects || []} />
 
       <TestimonialsSection
         title="Landowner Experiences"
@@ -78,4 +74,3 @@ export default async function PropertyDetailPage({ params }) {
     </main>
   )
 }
-

@@ -2,15 +2,18 @@ import React from 'react'
 import { PageHero } from '../../components/ui'
 import ProjectsClientView from '../../components/projects/ProjectsClientView'
 import TestimonialsSection from '../../components/TestimonialsSection'
+import { fetchPlots } from '../../lib/api'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Plots & Land Projects in Chennai | Crystal Estates',
   description:
-    'Explore verified residential plots and managed sandalwood farm land across Chennai and Kanchipuram. DTCP and CMDA approved layouts with 100% clear titles.',
+    'Explore verified residential plots, agricultural lands, and bulk land opportunities across Chennai and Kanchipuram. DTCP and CMDA approved layouts with 100% clear titles.',
   openGraph: {
     title: 'Plots & Land Projects in Chennai | Crystal Estates',
     description:
-      'Explore verified residential plots and managed sandalwood farm land across Chennai. DTCP and CMDA approved layouts with 100% clear titles.',
+      'Explore verified residential plots, agricultural lands, and bulk land opportunities across Chennai. DTCP and CMDA approved layouts with 100% clear titles.',
     url: 'https://crystalestates.in/projects',
     siteName: 'Crystal Estates',
     images: [
@@ -24,19 +27,21 @@ export const metadata = {
   },
 }
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const plots = await fetchPlots()
+
   return (
     <main>
       <PageHero
         title="Our Land & Plot Projects"
-        subtitle="CMDA & DTCP approved residential plots and managed sandalwood farm lands across prime Chennai and Kanchipuram growth corridors."
+        subtitle="CMDA & DTCP approved residential plots, agricultural lands, and investment corridors across prime Chennai and Kanchipuram."
         breadcrumb={[
           { label: 'Home', href: '/' },
           { label: 'Projects' },
         ]}
       />
 
-      <ProjectsClientView />
+      <ProjectsClientView initialProjects={plots || []} />
 
       <TestimonialsSection
         title="Landowner Reviews"

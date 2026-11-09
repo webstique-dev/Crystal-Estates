@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, ArrowRight, ShieldCheck, Ruler } from 'lucide-react'
 import { Button } from '../ui'
+import { formatPrice } from '../../lib/api'
 
 /**
  * Reusable ProjectCard Component (Plot UI)
@@ -14,13 +15,55 @@ import { Button } from '../ui'
  * @param {string} [className=""]
  */
 export function ProjectCard({ project, className = '' }) {
-  const isFlagship = project?.isFlagship || project?.type === 'Farm Land'
-  const fallbackImage = isFlagship ? '/images/vedanthangal.jpg' : '/images/kolapakkam.jpg'
-  const [imgSrc, setImgSrc] = useState(project?.image || fallbackImage)
-
   if (!project) return null
 
-  const projectSlug = project.slug || project.id
+  const isFlagship = project?.isFlagship || project?.type === 'Farm Land' || project?.propertyType === 'Agricultural'
+  const fallbackImage = isFlagship ? '/images/vedanthangal.jpg' : '/images/kolapakkam.jpg'
+
+  const primaryImage =
+    project.image ||
+    (Array.isArray(project.images) && project.images[0]) ||
+    (Array.isArray(project.gallery) && project.gallery[0]) ||
+    fallbackImage
+
+  const [imgSrc, setImgSrc] = useState(primaryImage)
+
+  useEffect(() => {
+    setImgSrc(primaryImage)
+  }, [primaryImage])
+
+  const projectSlug = project.slug || project.id || project.projectId
+
+  // Format Area display
+  const areaDisplay = (() => {
+    if (project.totalLandArea) return String(project.totalLandArea)
+    if (project.availableArea) return String(project.availableArea)
+    if (typeof project.area === 'number') return `${project.area.toLocaleString('en-IN')} ${project.unit || 'sq.ft'}`
+    if (typeof project.area === 'string' && project.area.trim()) {
+      const num = Number(project.area)
+      return !isNaN(num) ? `${num.toLocaleString('en-IN')} ${project.unit || 'sq.ft'}` : project.area
+    }
+    if (project.plotSizes) return project.plotSizes
+    return 'Individual Plots'
+  })()
+
+  // Format Price display
+  const priceDisplay = (() => {
+    if (project.priceDisplay) return project.priceDisplay
+    if (project.priceFormatted) return project.priceFormatted
+    if (project.price) return formatPrice(project.price)
+    return 'Price on Request'
+  })()
+
+  // Format Location display
+  const locationDisplay =
+    project.location ||
+    [project.village, project.taluk, project.district].filter(Boolean).join(', ') ||
+    'Chennai'
+
+  const propType = project.propertyType || project.type || 'Residential Plot'
+  const propStatus = project.status || project.badge || 'Available'
+  const propTitle = project.name || project.projectName || 'Crystal Estates Property'
 
   return (
     <article className={`project-card ${isFlagship ? 'project-card--flagship' : ''} ${className}`.trim()}>
@@ -28,8 +71,9 @@ export function ProjectCard({ project, className = '' }) {
       <div className="project-card__image-wrap">
         <Image
           src={imgSrc}
-          alt={project.name || 'Crystal Estates Land Plot'}
+          alt={propTitle}
           fill
+          unoptimized
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="project-card__image"
           loading="lazy"
@@ -41,20 +85,20 @@ export function ProjectCard({ project, className = '' }) {
       <div className="project-card__body">
         {/* Meta Bar: Location & Status / Type */}
         <div className="project-card__meta-bar">
-          <div className="project-card__location">
+          <div className="project-card__location" title={locationDisplay}>
             <MapPin size={14} className="project-card__location-icon" />
-            <span>{project.location}</span>
+            <span>{locationDisplay}</span>
           </div>
 
           <div className="project-card__badges-wrap">
-            {project.type && (
+            {propType && (
               <span className="project-card__type-pill">
-                {project.type}
+                {propType}
               </span>
             )}
-            {project.status && (
-              <span className={`project-card__status-pill project-card__status-pill--${project.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                {project.status}
+            {propStatus && (
+              <span className={`project-card__status-pill project-card__status-pill--${propStatus.toLowerCase().replace(/\s+/g, '-')}`}>
+                {propStatus}
               </span>
             )}
           </div>
@@ -63,7 +107,7 @@ export function ProjectCard({ project, className = '' }) {
         {/* Title */}
         <h3 className="project-card__title">
           <Link href={`/projects/${projectSlug}`}>
-            {project.name}
+            {propTitle}
           </Link>
         </h3>
 
@@ -74,14 +118,14 @@ export function ProjectCard({ project, className = '' }) {
               <Ruler size={13} /> Size / Extent
             </span>
             <span className="project-card__meta-value">
-              {project.area || project.plotSizes || 'Individual Plots'}
+              {areaDisplay}
             </span>
           </div>
 
           <div className="project-card__meta-item">
             <span className="project-card__meta-label">Price</span>
             <span className="project-card__meta-value project-card__meta-value--price">
-              {project.priceDisplay || `₹ ${(Number(project.price) / 100000).toFixed(1)} Lakhs`}
+              {priceDisplay}
             </span>
           </div>
         </div>
@@ -90,7 +134,7 @@ export function ProjectCard({ project, className = '' }) {
         <div className="project-card__footer">
           <div className="project-card__legal-tag">
             <ShieldCheck size={15} />
-            <span>100% Clear Title Patta</span>
+            <span>{project.approval || project.approvalStatus || '100% Clear Title Patta'}</span>
           </div>
 
           <Button href={`/projects/${projectSlug}`} variant="outline" size="sm" className="project-card__cta">

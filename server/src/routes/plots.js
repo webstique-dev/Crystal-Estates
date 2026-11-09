@@ -52,53 +52,184 @@ router.get('/', async (req, res) => {
 })
 
 /**
+ * GET /api/plots/:id
+ * Retrieve a single plot by id, projectId, or slug
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const db = await getDb()
+    const plot = await db.collection('featured_plots').findOne(
+      {
+        $or: [
+          { id },
+          { projectId: id },
+          { slug: id },
+          { layoutSlug: id },
+        ],
+      },
+      { projection: { _id: 0 } }
+    )
+
+    if (plot) {
+      return res.json({
+        success: true,
+        plot,
+      })
+    }
+
+    // Try fallback
+    const fb = fallbackPlots.find((p) => p.id === id || p.slug === id)
+    if (fb) {
+      return res.json({
+        success: true,
+        plot: {
+          ...fb,
+          hasLayoutMap: fb.name === 'Kolapakkam' || Boolean(fb.layoutBackgroundUrl),
+          layoutSlug: fb.name === 'Kolapakkam' ? 'kolapakkam' : fb.layoutSlug || null,
+        },
+      })
+    }
+
+    return res.status(404).json({ success: false, error: 'Property not found' })
+  } catch (err) {
+    console.error('MongoDB fetch error for /api/plots/:id:', err.message)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+/**
  * POST /api/plots
- * Create a new plot/project entry in MongoDB
+ * Create a new property/plot entry in MongoDB with the 16 full specifications:
+ * 1. Project ID (Automatic unique number)
+ * 2. Project name
+ * 3. Property type (Residential / Agricultural / Bulk land)
+ * 4. Location (District, Taluk, Village)
+ * 5. Survey number
+ * 6. Total land area (Acres / Cents / Sq.ft.)
+ * 7. Available area
+ * 8. Plot number (Individual plot identification)
+ * 9. Plot dimensions (Length and width)
+ * 10. Price (Total price / per sq.ft. / per cent)
+ * 11. Road access (Road width and access details)
+ * 12. Approval status (Applicable approval details)
+ * 13. Documents (Uploaded property documents)
+ * 14. Images (Site photographs)
+ * 15. Videos (Drone and site videos)
+ * 16. Status (Available / Reserved / Booked / Sold)
  */
 router.post('/', async (req, res) => {
   try {
     const {
+      projectId,
       name,
-      type = 'Residential Plots',
-      location = 'Chennai',
-      area,
-      price,
-      facing = 'East',
-      status = 'Available',
-      approval = 'CMDA & RERA Approved',
-      image = '/images/plot-1.jpg',
+      projectName,
+      propertyType,
+      type = 'Residential',
+      location = '',
+      district = '',
+      taluk = '',
+      village = '',
+      surveyNumber = '',
+      totalLandArea = '',
+      totalLandAreaUnit = 'Sq.ft.',
+      availableArea = '',
+      availableAreaUnit = 'Sq.ft.',
+      plotNumber = '',
+      plotNo = '',
+      plotDimensions = '',
+      length = '',
+      width = '',
+      price = 0,
+      pricePerSqft = '',
+      pricePerCent = '',
+      roadAccess = '',
+      approvalStatus = '',
+      approval = '',
+      documents = [],
+      images = [],
       gallery = [],
+      image = '',
+      videos = [],
+      status = 'Available',
+      description = '',
       hasLayoutMap = false,
       layoutSlug,
       layoutBackgroundUrl,
-      description,
+      facing = 'East',
+      mapLocation = '',
+      mapUrl = '',
+      googleMapsUrl = '',
     } = req.body
 
-    if (!name) {
-      return res.status(400).json({ success: false, error: 'Project / Plot name is required' })
+    const finalName = (name || projectName || '').trim()
+    if (!finalName) {
+      return res.status(400).json({ success: false, error: 'Project name is required' })
     }
 
     const db = await getDb()
-    const numericId = Date.now()
-    const id = `ce-${numericId}`
+    const autoNumber = Math.floor(100000 + Math.random() * 900000)
+    const finalProjectId = (projectId || `CE-${autoNumber}`).trim()
+    const id = `ce-${Date.now()}`
+
+    // Compose location string if not already formatted
+    let finalLocation = location.trim()
+    if (!finalLocation && (village || taluk || district)) {
+      finalLocation = [village, taluk, district].filter(Boolean).join(', ')
+    }
+
+    // Compose plot dimensions string
+    let finalDimensions = plotDimensions.trim()
+    if (!finalDimensions && (length || width)) {
+      finalDimensions = `${length || '-'} x ${width || '-'}`
+    }
+
+    // Images and cover
+    const allImages = Array.isArray(images) && images.length > 0 ? images : Array.isArray(gallery) ? gallery : []
+    const primaryImage = image || (allImages.length > 0 ? allImages[0] : '/images/hero-estate.jpg')
 
     const newPlot = {
       id,
-      name: name.trim(),
-      type,
-      location: location.trim(),
-      area: area ? Number(area) : 1200,
-      price: price ? Number(price) : 3500000,
+      projectId: finalProjectId,
+      name: finalName,
+      projectName: finalName,
+      propertyType: propertyType || type || 'Residential',
+      type: propertyType || type || 'Residential',
+      location: finalLocation || 'Chennai, Tamil Nadu',
+      district: district.trim(),
+      taluk: taluk.trim(),
+      village: village.trim(),
+      surveyNumber: surveyNumber.trim(),
+      totalLandArea: totalLandArea || '1200',
+      totalLandAreaUnit: totalLandAreaUnit || 'Sq.ft.',
+      availableArea: availableArea || totalLandArea || '1200',
+      availableAreaUnit: availableAreaUnit || totalLandAreaUnit || 'Sq.ft.',
+      plotNumber: (plotNumber || plotNo || '').trim(),
+      plotNo: (plotNumber || plotNo || '').trim(),
+      plotDimensions: finalDimensions,
+      price: price ? Number(price) : 0,
       priceFormatted: formatPrice(price),
+      pricePerSqft: pricePerSqft ? Number(pricePerSqft) : null,
+      pricePerCent: pricePerCent ? Number(pricePerCent) : null,
+      roadAccess: roadAccess.trim(),
+      approvalStatus: approvalStatus || approval || 'Clear Title & Patta',
+      approval: approvalStatus || approval || 'Clear Title & Patta',
+      rera: approvalStatus || approval || 'Clear Title & Patta',
+      documents: Array.isArray(documents) ? documents : [],
+      images: allImages,
+      gallery: allImages,
+      image: primaryImage,
+      videos: Array.isArray(videos) ? videos : [],
+      status: status || 'Available',
+      badge: status || 'Available',
       facing,
-      status,
-      approval,
-      image,
-      gallery: Array.isArray(gallery) ? gallery : image ? [image] : [],
+      description: description || '',
+      mapLocation: (mapLocation || mapUrl || googleMapsUrl || '').trim(),
+      mapUrl: (mapUrl || mapLocation || googleMapsUrl || '').trim(),
+      googleMapsUrl: (googleMapsUrl || mapLocation || mapUrl || '').trim(),
       hasLayoutMap: Boolean(hasLayoutMap || layoutBackgroundUrl),
       layoutSlug: layoutSlug || (layoutBackgroundUrl ? layoutBackgroundUrl.replace('/plots/', '').replace('-layout.svg', '') : null),
       layoutBackgroundUrl: layoutBackgroundUrl || null,
-      description: description || '',
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -107,7 +238,7 @@ router.post('/', async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Plot created successfully',
+      message: 'Property created successfully with all 16 specifications',
       plot: newPlot,
     })
   } catch (err) {
@@ -117,93 +248,65 @@ router.post('/', async (req, res) => {
 })
 
 /**
- * PATCH /api/plots or PATCH /api/plots/:id
+ * PATCH /api/plots/:id
  * Update a featured plot in MongoDB
  */
 const handlePatchPlot = async (req, res) => {
   try {
     const id = req.params.id || req.body.id
-    const {
-      status,
-      price,
-      area,
-      facing,
-      image,
-      gallery,
-      layoutBackgroundUrl,
-      hasLayoutMap,
-      name,
-      location,
-      approval,
-      type,
-    } = req.body
-
     if (!id) {
-      return res.status(400).json({ success: false, error: 'Plot id is required' })
+      return res.status(400).json({ success: false, error: 'Property ID is required' })
+    }
+
+    const updates = { ...req.body, updatedAt: new Date() }
+    delete updates._id
+
+    if (updates.price) {
+      updates.priceFormatted = formatPrice(updates.price)
     }
 
     const db = await getDb()
-    const updateData = {}
-    if (name) updateData.name = name
-    if (type) updateData.type = type
-    if (location) updateData.location = location
-    if (approval) updateData.approval = approval
-    if (status) updateData.status = status
-    if (price !== undefined) {
-      updateData.price = Number(price)
-      updateData.priceFormatted = formatPrice(price)
-    }
-    if (area !== undefined) updateData.area = Number(area)
-    if (facing) updateData.facing = facing
-    if (image) updateData.image = image
-    if (gallery) updateData.gallery = gallery
-    if (layoutBackgroundUrl !== undefined) {
-      updateData.layoutBackgroundUrl = layoutBackgroundUrl
-      updateData.hasLayoutMap = Boolean(layoutBackgroundUrl)
-    }
-    if (hasLayoutMap !== undefined) updateData.hasLayoutMap = Boolean(hasLayoutMap)
-    updateData.updatedAt = new Date()
-
     const result = await db.collection('featured_plots').updateOne(
-      { id: isNaN(id) ? id : Number(id) },
-      { $set: updateData }
+      { $or: [{ id }, { projectId: id }] },
+      { $set: updates },
+      { upsert: true }
     )
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, error: 'Property not found' })
+    }
 
     return res.json({
       success: true,
-      modifiedCount: result.modifiedCount,
-      updated: updateData,
+      message: 'Property updated successfully',
     })
   } catch (err) {
+    console.error('Error updating plot:', err)
     return res.status(500).json({ success: false, error: err.message })
   }
 }
 
+router.patch('/:id', handlePatchPlot)
+router.patch('/', handlePatchPlot)
+
 /**
  * DELETE /api/plots/:id
- * Delete a plot from MongoDB
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const id = req.params.id
-    if (!id) return res.status(400).json({ success: false, error: 'Plot ID required' })
-
+    const { id } = req.params
     const db = await getDb()
-    const result = await db.collection('featured_plots').deleteOne({
-      id: isNaN(id) ? id : Number(id),
-    })
+    const result = await db.collection('featured_plots').deleteOne({ $or: [{ id }, { projectId: id }] })
 
     return res.json({
       success: true,
+      message: `Property ${id} deleted`,
       deletedCount: result.deletedCount,
-      message: `Plot ${id} deleted successfully`,
     })
   } catch (err) {
+    console.error('Error deleting plot:', err)
     return res.status(500).json({ success: false, error: err.message })
   }
 })
-
-router.patch('/', handlePatchPlot)
-router.patch('/:id', handlePatchPlot)
 
 export default router

@@ -16,40 +16,40 @@ import {
   Download,
   CheckCircle2,
   Video,
+  ArrowUpRight,
 } from 'lucide-react'
 import { Container, Section, Button, Badge } from '../ui'
 import EnquiryForm from '../forms/EnquiryForm'
 import { ProjectCard } from './ProjectCard'
 import PlotViewer from '../plot-viewer/PlotViewer'
+import { resolveMapEmbedUrl, resolveMapDirectUrl } from '../../lib/api'
 
 export default function PropertyDetailClient({ initialProject, staticAllProjects = [] }) {
   const [project, setProject] = useState(initialProject)
   const [allProjects, setAllProjects] = useState(staticAllProjects)
   const [lightboxIndex, setLightboxIndex] = useState(null)
 
-  // Keep existing API call unchanged
+  // Fetch updated project details dynamically from MongoDB
   useEffect(() => {
     fetch('/api/plots')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.plots) {
-          const flagship = staticAllProjects.find((p) => p.isFlagship)
-          const merged = flagship
-            ? [flagship, ...data.plots.filter((p) => !p.isFlagship)]
-            : data.plots
-          setAllProjects(merged)
+        if (data.success && Array.isArray(data.plots) && data.plots.length > 0) {
+          setAllProjects(data.plots)
 
-          const found = merged.find(
+          const found = data.plots.find(
             (p) =>
-              p.slug === initialProject.slug ||
-              p.id === initialProject.id ||
-              p._id === initialProject.id
+              p.slug === initialProject?.slug ||
+              p.id === initialProject?.id ||
+              p.projectId === initialProject?.projectId ||
+              p.projectId === initialProject?.id ||
+              p._id === initialProject?.id
           )
           if (found) setProject(found)
         }
       })
       .catch(() => {})
-  }, [initialProject, staticAllProjects])
+  }, [initialProject])
 
   // Related projects (excluding current)
   const relatedProjects = allProjects
@@ -85,16 +85,34 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
   const projectImages = Array.from(new Set(rawImages))
   const hasImages = projectImages.length > 0
 
-  // Real project videos (if provided by project data / API / DB)
-  const rawVideos = [
-    ...(Array.isArray(project.videos) ? project.videos : []),
-    ...(typeof project.video === 'string' ? [project.video] : []),
-    ...(typeof project.videoUrl === 'string' ? [project.videoUrl] : []),
-    ...(typeof project.youtubeUrl === 'string' ? [project.youtubeUrl] : []),
-    ...(typeof project.video_url === 'string' ? [project.video_url] : []),
-  ].filter((v) => typeof v === 'string' && v.trim().length > 0)
+  // Real project videos (support both string URLs and uploaded video objects { name, url, size })
+  const rawVideos = []
+  if (Array.isArray(project.videos)) {
+    project.videos.forEach((v) => {
+      if (typeof v === 'string' && v.trim().length > 0) {
+        rawVideos.push({ url: v.trim(), name: 'Project Video' })
+      } else if (v && typeof v === 'object' && v.url) {
+        rawVideos.push({
+          url: String(v.url).trim(),
+          name: v.name || 'Project Video',
+          size: v.size || '',
+        })
+      }
+    })
+  }
+  ;[project.video, project.videoUrl, project.youtubeUrl, project.video_url].forEach((v) => {
+    if (typeof v === 'string' && v.trim().length > 0) {
+      rawVideos.push({ url: v.trim(), name: 'Project Video' })
+    }
+  })
 
-  const projectVideos = Array.from(new Set(rawVideos))
+  // Deduplicate by URL
+  const seenVideoUrls = new Set()
+  const projectVideos = rawVideos.filter((v) => {
+    if (!v.url || seenVideoUrls.has(v.url)) return false
+    seenVideoUrls.add(v.url)
+    return true
+  })
   const hasVideos = projectVideos.length > 0
   const hasMedia = hasImages || hasVideos
 
@@ -175,14 +193,26 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
   // ─────────────────────────────────────────────────────────────
   // 4. DYNAMIC SECTION 4: MAP LOCATION DATA
   // ─────────────────────────────────────────────────────────────
+  const mapLocationInput =
+    project.mapLocation ||
+    project.mapUrl ||
+    project.googleMapsUrl ||
+    project.mapEmbedUrl ||
+    project.location
+
   const hasLocation = Boolean(
-    (project.location && typeof project.location === 'string' && project.location.trim().length > 0) ||
-    (project.mapQuery && typeof project.mapQuery === 'string') ||
-    (project.mapUrl && typeof project.mapUrl === 'string') ||
+    (mapLocationInput && typeof mapLocationInput === 'string' && mapLocationInput.trim().length > 0) ||
     project.coordinates
   )
 
-  const mapQuery = project.mapQuery || `Crystal Estates ${project.location} Chennai`
+  const mapEmbedSrc = resolveMapEmbedUrl(
+    mapLocationInput,
+    `${project.location || project.name} Chennai`
+  )
+  const mapDirectLink = resolveMapDirectUrl(
+    mapLocationInput,
+    `${project.location || project.name} Chennai`
+  )
 
   // Lightbox navigation
   const openLightbox = (idx) => setLightboxIndex(idx)
@@ -562,8 +592,13 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                       gap: '20px',
                     }}
                   >
-                    {projectVideos.map((vidUrl, vIdx) => {
-                      const isDirectVideo = vidUrl.match(/\.(mp4|webm|ogg)($|\?)/i)
+                    {projectVideos.map((vidObj, vIdx) => {
+                      const vidUrl = typeof vidObj === 'string' ? vidObj : vidObj.url
+                      const vidName = typeof vidObj === 'object' && vidObj.name ? vidObj.name : `Video ${vIdx + 1}`
+                      const isDirectVideo =
+                        vidUrl.match(/\.(mp4|webm|ogg)($|\?)/i) ||
+                        vidUrl.startsWith('/videos/') ||
+                        vidUrl.includes('video-')
                       return (
                         <div
                           key={vIdx}
@@ -580,14 +615,16 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                           {isDirectVideo ? (
                             <video
                               controls
+                              playsInline
+                              preload="metadata"
                               src={vidUrl}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
                               suppressHydrationWarning
                             />
                           ) : (
                             <iframe
                               src={getEmbedVideoUrl(vidUrl)}
-                              title={`${project.name} Video Tour ${vIdx + 1}`}
+                              title={`${project.name} ${vidName}`}
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                               allowFullScreen
                               style={{ width: '100%', height: '100%', border: 0 }}
@@ -747,6 +784,32 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                     boxShadow: 'var(--shadow-sm)',
                   }}
                 >
+                  <a
+                    href={mapDirectLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      left: '12px',
+                      zIndex: 10,
+                      background: 'rgba(255, 255, 255, 0.96)',
+                      backdropFilter: 'blur(4px)',
+                      padding: '7px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#0B57D0',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <span>Open in Maps</span>
+                    <ArrowUpRight size={13} />
+                  </a>
                   <iframe
                     title={`${project.name} Location Map`}
                     width="100%"
@@ -754,9 +817,7 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                     style={{ border: 0, minHeight: '420px', width: '100%', height: '100%', display: 'block' }}
                     loading="lazy"
                     allowFullScreen
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                      mapQuery
-                    )}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                    src={mapEmbedSrc}
                   />
                 </div>
               </div>

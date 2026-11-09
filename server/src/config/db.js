@@ -9,37 +9,37 @@ const uri =
 
 const options = {
   maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 15000,
+  connectTimeoutMS: 15000,
 }
 
-let client
-let clientPromise
+let client = null
+let clientPromise = null
 
-if (!global._mongoClientPromise) {
-  client = new MongoClient(uri, options)
-  global._mongoClientPromise = client.connect()
+export async function getClient() {
+  if (!clientPromise) {
+    client = new MongoClient(uri, options)
+    clientPromise = client.connect().catch((err) => {
+      console.warn('MongoDB connection error, will retry on next request:', err.message)
+      client = null
+      clientPromise = null
+      throw err
+    })
+  }
+  return clientPromise
 }
-clientPromise = global._mongoClientPromise
 
-export default clientPromise
-
-/**
- * Returns a reference to the MongoDB database.
- * @param {string} [dbName]
- * @returns {Promise<import('mongodb').Db>}
- */
 export async function getDb(dbName = process.env.MONGODB_DB || 'Crystal-Estate') {
-  const connectedClient = await clientPromise
+  const connectedClient = await getClient()
   return connectedClient.db(dbName)
 }
 
-/**
- * Closes the MongoDB connection (for graceful shutdown).
- */
 export async function closeDb() {
   if (client) {
     await client.close()
-    global._mongoClientPromise = null
+    client = null
+    clientPromise = null
   }
 }
 
+export default getClient

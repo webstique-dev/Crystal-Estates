@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Filter, Search, RotateCcw } from 'lucide-react'
-import { Container, Section, Field, Button } from '../ui'
+import { Container, Section } from '../ui'
 import { ProjectGrid } from './ProjectGrid'
-import { projects as staticProjects, searchOptions } from '../../data/site'
+import { fetchPlots, normalizePlot } from '../../lib/api'
+import { searchOptions } from '../../data/site'
 
 const initialFilterState = {
   type: 'All',
@@ -13,28 +14,30 @@ const initialFilterState = {
   availability: 'all',
 }
 
-export default function ProjectsClientView() {
-  const [dbProjects, setDbProjects] = useState(staticProjects)
-  const [loading, setLoading] = useState(true)
+export default function ProjectsClientView({ initialProjects = null }) {
+  const [dbProjects, setDbProjects] = useState(
+    Array.isArray(initialProjects) && initialProjects.length > 0 ? initialProjects : []
+  )
+  const [loading, setLoading] = useState(!initialProjects || initialProjects.length === 0)
   const [filters, setFilters] = useState(initialFilterState)
 
-  // Keep existing API call unchanged
+  // Fetch actual data from backend API
   useEffect(() => {
     let isMounted = true
 
     fetch('/api/plots')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
       .then((data) => {
-        if (isMounted && data.success && data.plots?.length > 0) {
-          const flagship = staticProjects.find((p) => p.isFlagship)
-          const merged = flagship
-            ? [flagship, ...data.plots.filter((p) => !p.isFlagship)]
-            : data.plots
-          setDbProjects(merged)
+        if (isMounted && data.success && Array.isArray(data.plots) && data.plots.length > 0) {
+          const normalized = data.plots.map(normalizePlot)
+          setDbProjects(normalized)
         }
       })
       .catch((err) => {
-        console.warn('Could not fetch plots from MongoDB API, using local fallback:', err.message)
+        console.warn('Could not fetch plots from MongoDB API, checking fallback:', err.message)
       })
       .finally(() => {
         if (isMounted) setLoading(false)
@@ -53,20 +56,48 @@ export default function ProjectsClientView() {
     setFilters(initialFilterState)
   }
 
+  // Derive dynamic locations purely from actual database projects
+  const locationOptions = useMemo(() => {
+    const locSet = new Set()
+    dbProjects.forEach((p) => {
+      if (p.location) locSet.add(p.location.trim())
+      if (p.district) locSet.add(p.district.trim())
+      if (p.village) locSet.add(p.village.trim())
+      if (p.taluk) locSet.add(p.taluk.trim())
+    })
+    return Array.from(locSet).filter(Boolean).sort()
+  }, [dbProjects])
+
   // Filter computation
   const filteredProjects = useMemo(() => {
     return dbProjects.filter((proj) => {
       // 1. Type
-      if (filters.type !== 'All' && proj.type !== filters.type) {
-        return false
+      if (filters.type !== 'All') {
+        const pType = (proj.propertyType || proj.type || '').toLowerCase()
+        const fType = filters.type.toLowerCase()
+        if (fType.includes('residential') && !pType.includes('residential')) return false
+        if (fType.includes('farm') || fType.includes('agri')) {
+          if (!pType.includes('farm') && !pType.includes('agri')) return false
+        }
+        if (fType.includes('bulk') && !pType.includes('bulk')) return false
       }
 
       // 2. Location
-      if (
-        filters.location &&
-        !proj.location.toLowerCase().includes(filters.location.toLowerCase())
-      ) {
-        return false
+      if (filters.location) {
+        const filterLoc = filters.location.toLowerCase()
+        const fullLoc = [
+          proj.location,
+          proj.district,
+          proj.taluk,
+          proj.village,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+
+        if (!fullLoc.includes(filterLoc)) {
+          return false
+        }
       }
 
       // 3. Availability
@@ -123,8 +154,9 @@ export default function ProjectsClientView() {
                   className="filter-select"
                 >
                   <option value="All">All Categories</option>
-                  <option value="Residential Plot">Residential Plots</option>
-                  <option value="Farm Land">Farm &amp; Sandalwood Land</option>
+                  <option value="Residential">Residential Plots</option>
+                  <option value="Agricultural">Agricultural &amp; Farm Land</option>
+                  <option value="Bulk land">Bulk Land</option>
                 </select>
               </div>
             </div>
@@ -141,7 +173,7 @@ export default function ProjectsClientView() {
                   className="filter-select"
                 >
                   <option value="">All Chennai Locations</option>
-                  {searchOptions.locations.map((loc) => (
+                  {locationOptions.map((loc) => (
                     <option key={loc} value={loc}>
                       {loc}
                     </option>
@@ -182,9 +214,10 @@ export default function ProjectsClientView() {
                 >
                   <option value="all">All Statuses</option>
                   <option value="Available">Available</option>
-                  <option value="Booking Open">Booking Open</option>
+                  <option value="Reserved">Reserved</option>
+                  <option value="Booked">Booked</option>
                   <option value="Few Left">Few Left</option>
-                  <option value="Sold Out">Sold Out</option>
+                  <option value="Sold">Sold</option>
                 </select>
               </div>
             </div>
@@ -213,11 +246,10 @@ export default function ProjectsClientView() {
           loading={loading}
           emptyMessage="No land projects match your selected filters. Try broadening your location or budget."
           onReset={handleResetFilters}
-          initialCount={6}
-          pageSize={6}
+          initialCount={9}
+          pageSize={9}
         />
       </Container>
     </Section>
   )
 }
-

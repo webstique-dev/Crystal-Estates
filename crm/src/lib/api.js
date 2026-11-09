@@ -28,6 +28,46 @@ export async function uploadPlotImage(file) {
 }
 
 /**
+ * Upload property document (PDF, DOC, Patta, etc.) to backend
+ */
+export async function uploadDocument(file) {
+  const formData = new FormData()
+  formData.append('document', file)
+
+  const res = await fetch(getApiUrl('/api/upload/document'), {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Document upload failed: HTTP ${res.status}`)
+  }
+
+  return await res.json()
+}
+
+/**
+ * Upload drone or site video to backend
+ */
+export async function uploadVideo(file) {
+  const formData = new FormData()
+  formData.append('video', file)
+
+  const res = await fetch(getApiUrl('/api/upload/video'), {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Video upload failed: HTTP ${res.status}`)
+  }
+
+  return await res.json()
+}
+
+/**
  * Upload converted SVG layout to backend
  */
 export async function uploadLayoutSvg({ svgContent, layoutSlug, projectName, viewBox, width, height }) {
@@ -84,6 +124,26 @@ export async function createPlot(plotData) {
 }
 
 /**
+ * Update existing plot in database
+ */
+export async function updatePlot(id, updates) {
+  const res = await fetch(getApiUrl(`/api/plots/${id}`), {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to update plot: HTTP ${res.status}`)
+  }
+
+  return await res.json()
+}
+
+/**
  * Delete plot
  */
 export async function deletePlot(id) {
@@ -91,6 +151,199 @@ export async function deletePlot(id) {
     method: 'DELETE',
   })
   if (!res.ok) throw new Error(`Delete failed: HTTP ${res.status}`)
+  return await res.json()
+}
+
+/**
+ * Fetch all leads from MongoDB API
+ */
+export async function fetchLeads() {
+  const res = await fetch(getApiUrl('/api/leads'))
+  if (!res.ok) throw new Error(`Failed to fetch leads: HTTP ${res.status}`)
+  return await res.json()
+}
+
+/**
+ * Create a new lead in MongoDB
+ */
+export async function createLead(leadData) {
+  const res = await fetch(getApiUrl('/api/leads'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(leadData),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to create lead: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+/**
+ * Update a lead stage, agent, advance, or notes in MongoDB
+ */
+export async function updateLead(id, updates) {
+  const res = await fetch(getApiUrl(`/api/leads/${id}`), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to update lead: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+/**
+ * Delete a lead from MongoDB
+ */
+export async function deleteLead(id) {
+  const res = await fetch(getApiUrl(`/api/leads/${id}`), {
+    method: 'DELETE',
+  })
+  if (!res.ok) throw new Error(`Failed to delete lead: HTTP ${res.status}`)
+  return await res.json()
+}
+
+/**
+ * Record an advance payment for a lead (creates payment record in MongoDB)
+ */
+export async function recordLeadPayment(id, paymentData) {
+  const res = await fetch(getApiUrl(`/api/leads/${id}/payments`), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(paymentData),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to record payment: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+/**
+ * Schedule a follow-up for a lead in MongoDB
+ */
+export async function scheduleLeadFollowUp(id, followUpData) {
+  const res = await fetch(getApiUrl(`/api/leads/${id}/followups`), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(followUpData),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to schedule follow-up: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+/**
+ * Toggle completion of a follow-up item
+ */
+export async function toggleLeadFollowUp(id, fuId) {
+  const res = await fetch(getApiUrl(`/api/leads/${id}/followups/${fuId}/toggle`), {
+    method: 'PATCH',
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to toggle follow-up: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+/**
+ * Add a quick note to a lead and record in activity timeline
+ */
+export async function addLeadNote(id, note) {
+  const res = await fetch(getApiUrl(`/api/leads/${id}/notes`), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to add note: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+/**
+ * Fetch dynamic lead metadata (projects, agents, sources, stages, payment options)
+ */
+export async function fetchLeadsMeta() {
+  const res = await fetch(getApiUrl('/api/leads/meta'))
+  if (!res.ok) throw new Error('Failed to load lead metadata')
+  return await res.json()
+}
+
+/**
+ * Fetch all payments recorded across all leads
+ */
+export async function fetchAllPayments() {
+  const res = await fetch(getApiUrl('/api/leads/payments/all'))
+  if (!res.ok) throw new Error('Failed to load payments')
+  return await res.json()
+}
+
+/**
+ * Authentication: Login
+ */
+export async function loginUser(email, password) {
+  const res = await fetch(getApiUrl('/api/auth/login'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.error || 'Login failed. Please check your credentials.')
+  }
+  return data
+}
+
+/**
+ * Authentication: Request password reset
+ */
+export async function forgotPasswordUser(email) {
+  const res = await fetch(getApiUrl('/api/auth/forgot-password'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to send reset link.')
+  }
+  return data
+}
+
+/**
+ * Authentication: Reset password
+ */
+export async function resetPasswordUser({ email, resetToken, otp, newPassword }) {
+  const res = await fetch(getApiUrl('/api/auth/reset-password'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, resetToken, otp, newPassword }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to reset password.')
+  }
+  return data
+}
+
+/**
+ * Authentication: Fetch current user
+ */
+export async function fetchCurrentUser(token) {
+  const res = await fetch(getApiUrl('/api/auth/me'), {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) throw new Error('Session invalid')
   return await res.json()
 }
 
