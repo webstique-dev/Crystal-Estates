@@ -27,13 +27,7 @@ const STAGE_OPTIONS = [
   { id: 'lost', label: 'Lost' },
 ]
 
-const AGENTS = [
-  { name: 'Meera R', initials: 'MR', color: '#7C3AED' },
-  { name: 'Arun Kumar', initials: 'AK', color: '#DC2626' },
-  { name: 'Deepak Sharma', initials: 'DS', color: '#0D9488' },
-  { name: 'Manoj Raghavan', initials: 'MR', color: '#2563EB' },
-  { name: 'Priya Natarajan', initials: 'PN', color: '#E11D48' },
-]
+
 
 function getSourceBadge(source = 'Website') {
   switch (source.toLowerCase()) {
@@ -69,13 +63,13 @@ export default function LeadDrawer({
 }) {
   if (!lead) return null
 
-  const dynamicAgents = meta?.agents && meta.agents.length > 0 ? meta.agents : AGENTS
+  const dynamicAgents = meta?.agents && meta.agents.length > 0 ? meta.agents : []
   const dynamicStages = meta?.stages && meta.stages.length > 0 ? meta.stages : STAGE_OPTIONS
 
   // Local state initialized with lead data
   const [stage, setStage] = useState(lead.stage || 'new')
   const [assignedAgent, setAssignedAgent] = useState(
-    lead.assignedAgent?.name || dynamicAgents[0]?.name || 'Meera R'
+    lead.assignedAgent?.name || dynamicAgents[0]?.name || ''
   )
   const [noteInput, setNoteInput] = useState('')
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false)
@@ -131,9 +125,7 @@ export default function LeadDrawer({
       },
       {
         id: 'act-2',
-        text: `Enquiry captured from ${lead.source || 'Website'} for ${
-          lead.property || 'Crystal Estates'
-        }`,
+        text: `Enquiry captured from ${lead.source || 'Website'}${lead.property ? ` for ${lead.property}` : ''}`,
         time: `${createdDateStr} · 9:15 am`,
       },
     ]
@@ -142,7 +134,7 @@ export default function LeadDrawer({
   // Keep state updated if lead prop changes
   useEffect(() => {
     setStage(lead.stage || 'new')
-    setAssignedAgent(lead.assignedAgent?.name || 'Meera R')
+    setAssignedAgent(lead.assignedAgent?.name || '')
     if (lead.upcomingFollowUps) {
       setFollowUps(
         lead.upcomingFollowUps.map((fu) => ({
@@ -193,11 +185,15 @@ export default function LeadDrawer({
   // Handle Assigned Agent change
   const handleAgentChange = async (agentName) => {
     setAssignedAgent(agentName)
-    const agentObj = dynamicAgents.find((a) => a.name === agentName) || {
+    const agentObj = dynamicAgents.find((a) => a.name === agentName) || (agentName ? {
       name: agentName,
-      initials: 'AG',
-      color: '#7C3AED',
-    }
+      initials: agentName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+      color: '#0B57D0',
+    } : {
+      name: 'Unassigned',
+      initials: 'UN',
+      color: '#64748B',
+    })
     try {
       await onUpdate(lead.id, { assignedAgent: agentObj })
       const newAct = {
@@ -348,7 +344,7 @@ export default function LeadDrawer({
 
       const updates = {
         advanceReceived: amountFormatted,
-        unit: unitAllotted || lead.unit || 'A-0907',
+        unit: unitAllotted || lead.unit || 'Not allotted',
         activity: updatedActs,
       }
 
@@ -366,9 +362,7 @@ export default function LeadDrawer({
   // Send WhatsApp Direct
   const cleanPhone = (lead.phone || '').replace(/[^0-9]/g, '')
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-    `Hello ${lead.name}, regarding your enquiry for ${
-      lead.property || 'Crystal Estates'
-    } with Crystal Estates...`
+    `Hello ${lead.name}, regarding your enquiry${lead.property ? ` for ${lead.property}` : ''} with Crystal Estates...`
   )}`
 
   const sourceBadge = getSourceBadge(lead.source)
@@ -393,8 +387,7 @@ export default function LeadDrawer({
                 className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-xs shrink-0"
                 style={{
                   backgroundColor:
-                    lead.assignedAgent?.color ||
-                    (lead.name?.includes('Priya') ? '#7C3AED' : '#0B57D0'),
+                    lead.assignedAgent?.color || '#0B57D0',
                 }}
               >
                 {leadInitials}
@@ -409,10 +402,10 @@ export default function LeadDrawer({
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${sourceBadge.bg} ${sourceBadge.text}`}
                   >
-                    {lead.source || 'Instagram'}
+                    {lead.source || 'Website'}
                   </span>
                   <span className="text-xs text-slate-400 font-medium truncate">
-                    Added {createdDateStr} · {lead.property || 'Crystal Estates'}
+                    Added {createdDateStr}{lead.property ? ` · ${lead.property}` : ''}
                   </span>
                 </div>
               </div>
@@ -468,6 +461,9 @@ export default function LeadDrawer({
                       {ag.name}
                     </option>
                   ))}
+                  {dynamicAgents.length === 0 && (
+                    <option value="">Unassigned</option>
+                  )}
                 </select>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2 pointer-events-none" />
               </div>
@@ -575,7 +571,7 @@ export default function LeadDrawer({
                 <div>
                   <div className="text-[11px] text-slate-400 font-medium">Project</div>
                   <div className="text-xs font-semibold text-slate-800 mt-0.5">
-                    {lead.property || 'Crystal Estates'}
+                    {lead.property || '—'}
                   </div>
                 </div>
                 <div>
@@ -693,7 +689,7 @@ export default function LeadDrawer({
                               fu.completed ? 'line-through text-slate-400' : 'text-slate-800'
                             }`}
                           >
-                            {fu.title || 'First call, Instagram villa ad enquiry'}
+                            {fu.title || `Follow-up ${fu.type || 'Call'}`}
                           </div>
                           <div className="text-[11px] text-slate-400 mt-0.5">
                             {fu.when || 'Today · 5:00 pm'}

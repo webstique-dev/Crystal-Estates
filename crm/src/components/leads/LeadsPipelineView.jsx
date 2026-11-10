@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { ChevronDown } from 'lucide-react'
 import LeadColumn from './LeadColumn'
 import AddLeadModal from './AddLeadModal'
@@ -56,24 +56,17 @@ const PIPELINE_STAGES = [
   },
 ]
 
-const SOURCE_TABS = [
+const DEFAULT_SOURCES = [
   'All sources',
   'Website',
+  'WhatsApp',
+  'Walk-in',
+  'Phone Call',
+  'Referral',
   'Facebook',
   'Instagram',
   '99acres',
   'MagicBricks',
-  'Walk-in',
-  'Referral',
-  'WhatsApp',
-]
-
-const AGENTS_LIST = [
-  'All agents',
-  'Arun Kumar',
-  'Deepak Sharma',
-  'Manoj Raghavan',
-  'Priya Natarajan',
 ]
 
 export default function LeadsPipelineView({
@@ -85,6 +78,7 @@ export default function LeadsPipelineView({
 }) {
   const {
     leads,
+    allLeads = leads,
     moveLeadStage,
     addNewLead,
     updateLeadDetails,
@@ -93,10 +87,35 @@ export default function LeadsPipelineView({
     setSelectedSource,
     selectedAgent,
     setSelectedAgent,
+    meta,
   } = leadsState
 
   const [addModalStage, setAddModalStage] = useState('new')
   const [selectedLead, setSelectedLead] = useState(null)
+
+  // Dynamic source tabs
+  const sourceTabs = useMemo(() => {
+    if (meta?.sources && meta.sources.length > 0) {
+      return ['All sources', ...meta.sources]
+    }
+    return DEFAULT_SOURCES
+  }, [meta?.sources])
+
+  // Dynamic agents list derived from meta and active leads
+  const dynamicAgentList = useMemo(() => {
+    const set = new Set()
+    if (meta?.agents && meta.agents.length > 0) {
+      meta.agents.forEach((ag) => {
+        if (ag.name) set.add(ag.name)
+      })
+    }
+    if (allLeads && allLeads.length > 0) {
+      allLeads.forEach((l) => {
+        if (l.assignedAgent?.name) set.add(l.assignedAgent.name)
+      })
+    }
+    return ['All agents', ...Array.from(set)]
+  }, [meta?.agents, allLeads])
 
   // Drag and drop handler
   const handleDropLead = async (targetStageId, leadId) => {
@@ -122,11 +141,11 @@ export default function LeadsPipelineView({
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      {/* ── Filter Bar: Sources Pills + Agent Dropdown (Second header removed) ── */}
+      {/* ── Filter Bar: Sources Pills + Agent Dropdown ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1">
         {/* Source Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-xs font-semibold scrollbar-none">
-          {SOURCE_TABS.map((src) => {
+          {sourceTabs.map((src) => {
             const isActive = selectedSource === src
             return (
               <button
@@ -152,7 +171,7 @@ export default function LeadsPipelineView({
             onChange={(e) => setSelectedAgent(e.target.value)}
             className="appearance-none bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 pr-8 rounded-xl shadow-2xs focus:outline-none focus:border-[#0B57D0] cursor-pointer"
           >
-            {AGENTS_LIST.map((ag) => (
+            {dynamicAgentList.map((ag) => (
               <option key={ag} value={ag}>
                 {ag}
               </option>
@@ -205,36 +224,16 @@ export default function LeadsPipelineView({
           onUpdate={async (id, updates) => {
             const updated = await updateLeadDetails(id, updates)
             if (updated) setSelectedLead(updated)
-            if (onShowToast) onShowToast('Lead details updated!')
-          }}
-          onRecordPayment={async (id, paymentData) => {
-            const updated = await leadsState.recordPayment(id, paymentData)
-            if (updated) setSelectedLead(updated)
-            if (onShowToast) onShowToast('Advance payment recorded successfully!')
-            return updated
-          }}
-          onScheduleFollowUp={async (id, fuData) => {
-            const updated = await leadsState.scheduleFollowUp(id, fuData)
-            if (updated) setSelectedLead(updated)
-            if (onShowToast) onShowToast('Follow-up scheduled!')
-            return updated
-          }}
-          onToggleFollowUp={async (id, fuId) => {
-            const updated = await leadsState.toggleFollowUp(id, fuId)
-            if (updated) setSelectedLead(updated)
-            return updated
-          }}
-          onAddNote={async (id, noteText) => {
-            const updated = await leadsState.addNote(id, noteText)
-            if (updated) setSelectedLead(updated)
-            if (onShowToast) onShowToast('Note added!')
-            return updated
           }}
           onDelete={async (id) => {
             await removeLead(id)
             setSelectedLead(null)
-            if (onShowToast) onShowToast('Lead removed from pipeline.')
+            if (onShowToast) onShowToast('Lead deleted successfully')
           }}
+          onRecordPayment={leadsState.recordPayment}
+          onScheduleFollowUp={leadsState.scheduleFollowUp}
+          onToggleFollowUp={leadsState.toggleFollowUp}
+          onAddNote={leadsState.addNote}
         />
       )}
     </div>

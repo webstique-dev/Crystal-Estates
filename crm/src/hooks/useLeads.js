@@ -176,9 +176,9 @@ export function useLeads() {
       stage: 'new',
       source: Math.random() > 0.4 ? 'Website' : 'WhatsApp',
       budget: randomProp.price || 7800000,
-      assignedAgent: { name: 'Arun Kumar', initials: 'AK', color: '#DC2626' },
+      assignedAgent: meta?.agents?.[0] || { name: 'Unassigned', initials: 'UN', color: '#64748B' },
       followUpDate: 'Today',
-      notes: `Simulated fresh lead enquiry for ${randomProp.name}. Interested in CMDA approved plot.`,
+      notes: `Enquiry for ${randomProp.name}.`,
     })
   }
 

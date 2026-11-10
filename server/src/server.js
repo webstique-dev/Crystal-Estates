@@ -234,6 +234,24 @@ app.post('/api/enquiry', async (req, res) => {
       })
     }
 
+    let assignedAgent = body.assignedAgent
+    if (!assignedAgent || !assignedAgent.name) {
+      const defaultUser = await db.collection('users').findOne({}, { projection: { name: 1, color: 1, initials: 1 } })
+      if (defaultUser) {
+        assignedAgent = {
+          name: defaultUser.name,
+          initials: defaultUser.initials || defaultUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+          color: defaultUser.color || '#0B57D0',
+        }
+      } else {
+        assignedAgent = {
+          name: 'Unassigned',
+          initials: 'UN',
+          color: '#64748B',
+        }
+      }
+    }
+
     const newLead = {
       id,
       name,
@@ -245,11 +263,7 @@ app.post('/api/enquiry', async (req, res) => {
       source: leadSource,
       budget: Number(body.budget) || 0,
       budgetFormatted: body.budgetFormatted || body.expectedPrice || 'TBD',
-      assignedAgent: body.assignedAgent || {
-        name: 'Arun Kumar',
-        initials: 'AK',
-        color: '#DC2626',
-      },
+      assignedAgent,
       requirement,
       unit: body.unit || 'Not allotted',
       followUpDate,

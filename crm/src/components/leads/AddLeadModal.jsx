@@ -1,15 +1,6 @@
 import React, { useState } from 'react'
 import { X, ChevronDown } from 'lucide-react'
 
-const AGENT_OPTIONS = [
-  { name: 'Divya S', initials: 'DS', color: '#0B57D0' },
-  { name: 'Meera R', initials: 'MR', color: '#7C3AED' },
-  { name: 'Arun Kumar', initials: 'AK', color: '#DC2626' },
-  { name: 'Deepak Sharma', initials: 'DS', color: '#0D9488' },
-  { name: 'Manoj Raghavan', initials: 'MR', color: '#2563EB' },
-  { name: 'Priya Natarajan', initials: 'PN', color: '#E11D48' },
-]
-
 const SOURCE_OPTIONS = [
   'Walk-in',
   'Website',
@@ -46,7 +37,7 @@ export default function AddLeadModal({
       ? properties.map((p) => p.name)
       : []
 
-  const dynamicAgents = meta?.agents && meta.agents.length > 0 ? meta.agents : AGENT_OPTIONS
+  const dynamicAgents = meta?.agents && meta.agents.length > 0 ? meta.agents : []
   const dynamicSources = meta?.sources && meta.sources.length > 0 ? meta.sources : SOURCE_OPTIONS
   const dynamicStages = meta?.stages && meta.stages.length > 0 ? meta.stages : STAGE_OPTIONS
 
@@ -56,13 +47,11 @@ export default function AddLeadModal({
   const [project, setProject] = useState(dynamicProjects[0] || '')
   const [source, setSource] = useState(dynamicSources[0] || 'Walk-in')
   const [budgetLakhs, setBudgetLakhs] = useState('')
-  const [assignTo, setAssignTo] = useState(dynamicAgents[0]?.name || 'Divya S')
+  const [assignTo, setAssignTo] = useState(dynamicAgents[0]?.name || '')
   const [stage, setStage] = useState(initialStage || 'new')
   const [sendWhatsApp, setSendWhatsApp] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
-
-  const projectOptions = dynamicProjects
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -78,8 +67,21 @@ export default function AddLeadModal({
       const numLakhs = Number(budgetLakhs) || 0
       const totalBudget = numLakhs * 100000
 
+      const matchedAgent = dynamicAgents.find((a) => a.name === assignTo)
       const assignedAgentObj =
-        AGENT_OPTIONS.find((a) => a.name === assignTo) || AGENT_OPTIONS[0]
+        matchedAgent ||
+        (assignTo
+          ? {
+              name: assignTo,
+              initials: assignTo
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase(),
+              color: '#0B57D0',
+            }
+          : { name: 'Unassigned', initials: 'UN', color: '#64748B' })
 
       const matchedProp = properties.find((p) => p.name === project)
 
@@ -94,7 +96,7 @@ export default function AddLeadModal({
       }
       initialActivities.push({
         id: `act-${Date.now()}-2`,
-        text: `Enquiry captured from ${source} for ${project}`,
+        text: `Enquiry captured from ${source}${project ? ` for ${project}` : ''}`,
         time: 'Just now',
       })
 
@@ -102,16 +104,19 @@ export default function AddLeadModal({
         name: fullName.trim(),
         phone: mobile.trim(),
         email: email.trim(),
-        property: project,
+        property: project || '',
         propertyId: matchedProp?.id || null,
         stage: stage.toLowerCase().replace(/\s+/g, ''),
         source,
         budget: totalBudget,
-        budgetFormatted: numLakhs >= 100 ? `₹${(numLakhs / 100).toFixed(2)} Cr` : `₹${numLakhs} L`,
+        budgetFormatted:
+          numLakhs >= 100 ? `₹${(numLakhs / 100).toFixed(2)} Cr` : numLakhs > 0 ? `₹${numLakhs} L` : 'TBD',
         assignedAgent: assignedAgentObj,
         followUpDate: 'Today',
-        notes: `Walk-in enquiry for ${project}. Budget: ₹${numLakhs} Lakhs.`,
-        requirement: numLakhs >= 150 ? '4 BHK Villa' : numLakhs >= 80 ? '3 BHK' : '1,500 sq ft plot',
+        notes: project
+          ? `${source} enquiry for ${project}.${numLakhs > 0 ? ` Budget: ₹${numLakhs} Lakhs.` : ''}`
+          : `${source} enquiry.${numLakhs > 0 ? ` Budget: ₹${numLakhs} Lakhs.` : ''}`,
+        requirement: project ? `${project} - Plot/Unit` : 'Plot/Unit',
         unit: 'Not allotted',
         upcomingFollowUps: [
           {
@@ -158,38 +163,40 @@ export default function AddLeadModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium">
               {error}
             </div>
           )}
 
-          {/* Row 1: Full name & Mobile */}
+          {/* Row 1: Full Name & Mobile */}
           <div className="grid grid-cols-2 gap-3">
+            {/* Full Name */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Full name
+                Full name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Ramya Sekar"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition"
+                placeholder="e.g. Ramesh Kumar"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition"
               />
             </div>
 
+            {/* Mobile */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Mobile
+                Mobile number <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
+                type="tel"
                 required
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
-                placeholder="+91 98765 43210"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition"
+                placeholder="+91 98400 12345"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition"
               />
             </div>
           </div>
@@ -203,7 +210,7 @@ export default function AddLeadModal({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="ramya.sekar@gmail.com"
+              placeholder="e.g. name@example.com"
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition"
             />
           </div>
@@ -221,6 +228,7 @@ export default function AddLeadModal({
                   onChange={(e) => setProject(e.target.value)}
                   className="w-full appearance-none px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0B57D0] focus:bg-white cursor-pointer pr-8"
                 >
+                  <option value="">Select project...</option>
                   {dynamicProjects.map((pName) => (
                     <option key={pName} value={pName}>
                       {pName}
@@ -264,7 +272,7 @@ export default function AddLeadModal({
                 type="number"
                 value={budgetLakhs}
                 onChange={(e) => setBudgetLakhs(e.target.value)}
-                placeholder="95"
+                placeholder="e.g. 85"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition"
               />
             </div>
@@ -285,6 +293,9 @@ export default function AddLeadModal({
                       {ag.name}
                     </option>
                   ))}
+                  {dynamicAgents.length === 0 && (
+                    <option value="">Unassigned</option>
+                  )}
                 </select>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-3 pointer-events-none" />
               </div>
@@ -312,7 +323,7 @@ export default function AddLeadModal({
             </div>
           </div>
 
-          {/* Checkbox: Send WhatsApp welcome message */}
+          {/* Row 6: Checkbox for WhatsApp welcome */}
           <div className="pt-1">
             <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
               <input
@@ -321,12 +332,12 @@ export default function AddLeadModal({
                 onChange={(e) => setSendWhatsApp(e.target.checked)}
                 className="w-4 h-4 rounded border-slate-300 text-[#0B57D0] focus:ring-[#0B57D0]"
               />
-              <span>Send WhatsApp welcome message</span>
+              <span>Send automated WhatsApp welcome message</span>
             </label>
           </div>
 
-          {/* Footer Actions */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+          {/* Row 7: Buttons */}
+          <div className="pt-2 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
@@ -339,7 +350,7 @@ export default function AddLeadModal({
               disabled={submitting}
               className="px-5 py-2 bg-[#0B57D0] hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-sm transition active:scale-[0.98] disabled:opacity-50"
             >
-              {submitting ? 'Adding lead...' : 'Add lead'}
+              {submitting ? 'Saving...' : 'Add lead'}
             </button>
           </div>
         </form>

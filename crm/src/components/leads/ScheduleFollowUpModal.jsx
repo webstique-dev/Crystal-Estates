@@ -114,7 +114,7 @@ export default function ScheduleFollowUpModal({
   const [when, setWhen] = useState('Tomorrow, 11:00 am')
   const [customDate, setCustomDate] = useState(getTomorrowDateString())
   const [customTime, setCustomTime] = useState('11:00 AM')
-  const [note, setNote] = useState('Discuss home loan options and share bank tie-ups')
+  const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const dateInputRef = React.useRef(null)
 
@@ -195,7 +195,7 @@ export default function ScheduleFollowUpModal({
                 >
                   {leads.map((l) => (
                     <option key={l.id} value={l.id}>
-                      {l.name} · {l.property || 'Crystal Greens Villas'}
+                      {l.name}{l.property ? ` · ${l.property}` : ''}
                     </option>
                   ))}
                 </select>
@@ -203,7 +203,7 @@ export default function ScheduleFollowUpModal({
                 <input
                   type="text"
                   readOnly
-                  value={`${activeLead.name} · ${activeLead.property || 'Crystal Greens Villas'}`}
+                  value={`${activeLead.name}${activeLead.property ? ` · ${activeLead.property}` : ''}`}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 cursor-default focus:outline-none pr-8"
                 />
               )}
@@ -324,7 +324,7 @@ export default function ScheduleFollowUpModal({
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Discuss home loan options and share bank tie-ups"
+              placeholder="Enter follow-up agenda or notes..."
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition resize-none"
             />
           </div>

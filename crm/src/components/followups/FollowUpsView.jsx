@@ -136,9 +136,9 @@ export default function FollowUpsView({
       leadEmail: lead.email,
       leadProperty: lead.property,
       assignedAgent: lead.assignedAgent || {
-        name: 'Divya S',
-        initials: 'DS',
-        color: '#0B57D0',
+        name: 'Unassigned',
+        initials: 'UN',
+        color: '#64748B',
       },
       fullLead: lead,
     }))
@@ -318,10 +318,10 @@ export default function FollowUpsView({
                               item.assignedAgent?.color || '#0B57D0',
                           }}
                         >
-                          {item.assignedAgent?.initials || 'DS'}
+                          {item.assignedAgent?.initials || 'UN'}
                         </div>
                         <span className="text-xs font-semibold text-slate-700 truncate">
-                          {item.assignedAgent?.name || 'Divya S'}
+                          {item.assignedAgent?.name || 'Unassigned'}
                         </span>
                       </div>
                     </td>

@@ -40,9 +40,9 @@ export default function RecordPaymentModal({
   onSavePayment,
 }) {
   const [paymentFor, setPaymentFor] = useState(paymentForOptions[0] || 'Token advance')
-  const [amount, setAmount] = useState('200000')
+  const [amount, setAmount] = useState('')
   const [mode, setMode] = useState(paymentModes[0] || 'UPI')
-  const [referenceNo, setReferenceNo] = useState('UPI 2114 6215 4997')
+  const [referenceNo, setReferenceNo] = useState('')
   const [unitAllotted, setUnitAllotted] = useState(
     lead?.unit && lead.unit !== 'Not allotted' ? lead.unit : ''
   )
@@ -71,7 +71,7 @@ export default function RecordPaymentModal({
         amountFormatted: formattedAmount,
         mode,
         referenceNo: referenceNo.trim(),
-        unitAllotted: unitAllotted.trim() || lead.unit || 'A-0907',
+        unitAllotted: unitAllotted.trim() || (lead.unit !== 'Not allotted' ? lead.unit : ''),
         sendWhatsApp,
         sendEmail,
         moveLeadToWon,
@@ -118,7 +118,7 @@ export default function RecordPaymentModal({
               <input
                 type="text"
                 readOnly
-                value={`${lead.name} · ${lead.property || 'Crystal Greens Villas'}`}
+                value={`${lead.name}${lead.property ? ` · ${lead.property}` : ''}`}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 cursor-default focus:outline-none pr-8"
               />
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-3 pointer-events-none" />
@@ -160,7 +160,7 @@ export default function RecordPaymentModal({
                 step="1000"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="200000"
+                placeholder="e.g. 200000"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition"
               />
             </div>
@@ -198,7 +198,7 @@ export default function RecordPaymentModal({
                 type="text"
                 value={referenceNo}
                 onChange={(e) => setReferenceNo(e.target.value)}
-                placeholder="UPI 2114 6215 4997"
+                placeholder="e.g. UPI 2114 6215 4997 or Cheque #123456"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition"
               />
             </div>
@@ -213,7 +213,7 @@ export default function RecordPaymentModal({
               type="text"
               value={unitAllotted}
               onChange={(e) => setUnitAllotted(e.target.value)}
-              placeholder="e.g. A-0907"
+              placeholder="e.g. Plot #12 or Unit 4B"
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B57D0] focus:bg-white transition"
             />
           </div>

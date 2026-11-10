@@ -20,326 +20,6 @@ function formatCurrency(amount) {
   return `₹${num.toLocaleString('en-IN')}`
 }
 
-/**
- * Initial real seed leads based on actual Crystal Estates database properties
- */
-const initialSeedLeads = [
-  {
-    id: 'lead-001',
-    name: 'Suresh Babu',
-    phone: '+91 98843 20517',
-    email: 'sureshbabu.k@gmail.com',
-    property: 'Crystal Bay Residences',
-    propertyId: 'ce-001',
-    stage: 'followup',
-    source: 'Website',
-    budget: 12500000,
-    budgetFormatted: '₹1.25 Cr',
-    requirement: '3 BHK',
-    unit: 'Not allotted',
-    assignedAgent: { name: 'Divya S', initials: 'DS', color: '#0B57D0' },
-    followUpDate: 'Yesterday',
-    notes: 'Share revised cost sheet with car park.',
-    advanceReceived: null,
-    upcomingFollowUps: [
-      {
-        id: 'fu-001',
-        type: 'Call',
-        title: 'Share revised cost sheet with car park',
-        when: 'Yesterday, 4:00 pm',
-        completed: false,
-        createdAt: new Date(Date.now() - 3600000 * 24),
-      },
-    ],
-    activity: [
-      {
-        id: 'act-001',
-        text: 'Enquiry captured from Website for Crystal Bay Residences',
-        time: 'Yesterday · 2:00 pm',
-        createdAt: new Date(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 30),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'lead-002',
-    name: 'Rajesh Kannan',
-    phone: '+91 98400 31876',
-    email: 'rajesh.kannan@hotmail.com',
-    property: 'Crystal Bay Residences',
-    propertyId: 'ce-001',
-    stage: 'contacted',
-    source: 'Facebook',
-    budget: 8500000,
-    budgetFormatted: '₹85 L',
-    requirement: '2 BHK',
-    unit: 'Not allotted',
-    assignedAgent: { name: 'Arun Kumar', initials: 'AK', color: '#DC2626' },
-    followUpDate: 'Today',
-    notes: 'Confirm budget and loan pre-approval.',
-    advanceReceived: null,
-    upcomingFollowUps: [
-      {
-        id: 'fu-002',
-        type: 'Call',
-        title: 'Confirm budget and loan pre-approval',
-        when: 'Today, 11:30 am',
-        completed: false,
-        createdAt: new Date(),
-      },
-    ],
-    activity: [
-      {
-        id: 'act-002',
-        text: 'Follow-up call scheduled for Today 11:30 am',
-        time: 'Today · 9:00 am',
-        createdAt: new Date(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 18),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'lead-003',
-    name: 'Fathima Begum',
-    phone: '+91 90940 56631',
-    email: 'fathima.b@gmail.com',
-    property: 'Crystal Meadows',
-    propertyId: 'ce-002',
-    stage: 'followup',
-    source: 'Instagram',
-    budget: 3800000,
-    budgetFormatted: '₹38 L',
-    requirement: '1,200 sq ft plot',
-    unit: 'Plot #08',
-    assignedAgent: { name: 'Meera R', initials: 'MR', color: '#7C3AED' },
-    followUpDate: 'Today',
-    notes: 'Send Oragadam plot layout and DTCP approval.',
-    advanceReceived: null,
-    upcomingFollowUps: [
-      {
-        id: 'fu-003',
-        type: 'WhatsApp',
-        title: 'Send Oragadam plot layout and DTCP approval',
-        when: 'Today, 3:00 pm',
-        completed: false,
-        createdAt: new Date(),
-      },
-    ],
-    activity: [
-      {
-        id: 'act-003',
-        text: 'WhatsApp brochure dispatch scheduled for 3:00 pm',
-        time: 'Today · 10:00 am',
-        createdAt: new Date(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 12),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'lead-004',
-    name: 'Priya Venkatesh',
-    phone: '+91 99620 41538',
-    email: 'priya.v@outlook.com',
-    property: 'Crystal Greens Villas',
-    propertyId: 'ce-003',
-    stage: 'new',
-    source: 'Instagram',
-    budget: 30000000,
-    budgetFormatted: '₹3 Cr',
-    requirement: '4 BHK Villa',
-    unit: 'Not allotted',
-    assignedAgent: { name: 'Meera R', initials: 'MR', color: '#7C3AED' },
-    followUpDate: 'Today',
-    notes: 'First call, Instagram villa ad enquiry.',
-    advanceReceived: null,
-    upcomingFollowUps: [
-      {
-        id: 'fu-004',
-        type: 'Call',
-        title: 'First call, Instagram villa ad enquiry',
-        when: 'Today, 5:00 pm',
-        completed: false,
-        createdAt: new Date(),
-      },
-    ],
-    activity: [
-      {
-        id: 'act-004-1',
-        text: 'WhatsApp welcome message sent automatically',
-        time: '15 Oct 2026 · 9:25 am',
-        createdAt: new Date(),
-      },
-      {
-        id: 'act-004-2',
-        text: 'Enquiry captured from Instagram for Crystal Greens Villas',
-        time: '15 Oct 2026 · 9:15 am',
-        createdAt: new Date(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 2),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'lead-005',
-    name: 'Mohammed Irfan',
-    phone: '+91 90030 77412',
-    email: 'irfan.m@yahoo.com',
-    property: 'Crystal Meadows',
-    propertyId: 'ce-002',
-    stage: 'new',
-    source: 'Facebook',
-    budget: 4500000,
-    budgetFormatted: '₹45 L',
-    requirement: '1,500 sq ft plot',
-    unit: 'Plot #18',
-    assignedAgent: { name: 'Rahul V', initials: 'RV', color: '#EA580C' },
-    followUpDate: 'Today',
-    notes: 'First call, Facebook lead form.',
-    advanceReceived: null,
-    upcomingFollowUps: [
-      {
-        id: 'fu-005',
-        type: 'Call',
-        title: 'First call, Facebook lead form',
-        when: 'Today, 6:00 pm',
-        completed: false,
-        createdAt: new Date(),
-      },
-    ],
-    activity: [
-      {
-        id: 'act-005',
-        text: 'Enquiry captured from Facebook for Crystal Meadows',
-        time: 'Today · 8:30 am',
-        createdAt: new Date(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 6),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'lead-006',
-    name: 'Lakshmi Narayanan',
-    phone: '+91 94440 65219',
-    email: 'lnarayanan@gmail.com',
-    property: 'Crystal Heights',
-    propertyId: 'ce-005',
-    stage: 'contacted',
-    source: '99acres',
-    budget: 19000000,
-    budgetFormatted: '₹1.9 Cr',
-    requirement: '3 BHK',
-    unit: 'Not allotted',
-    assignedAgent: { name: 'Divya S', initials: 'DS', color: '#0B57D0' },
-    followUpDate: 'Tomorrow',
-    notes: 'Office meeting with family to discuss 3 BHK options.',
-    advanceReceived: null,
-    upcomingFollowUps: [
-      {
-        id: 'fu-006',
-        type: 'Meeting',
-        title: 'Office meeting with family to discuss 3 BHK options',
-        when: 'Tomorrow, 11:00 am',
-        completed: false,
-        createdAt: new Date(),
-      },
-    ],
-    activity: [
-      {
-        id: 'act-006',
-        text: 'Office meeting scheduled for Tomorrow 11:00 am',
-        time: 'Yesterday · 5:00 pm',
-        createdAt: new Date(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 40),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'lead-007',
-    name: 'Vignesh Iyer',
-    phone: '+91 98840 12345',
-    email: 'vignesh.iyer@gmail.com',
-    property: 'Crystal Bay Residences',
-    propertyId: 'ce-001',
-    stage: 'negotiation',
-    source: 'Walk-in',
-    budget: 9500000,
-    budgetFormatted: '₹95 L',
-    requirement: '2 BHK',
-    unit: 'A-0504',
-    assignedAgent: { name: 'Divya S', initials: 'DS', color: '#0B57D0' },
-    followUpDate: '17 Oct',
-    notes: 'Negotiation: floor rise charges waiver.',
-    advanceReceived: null,
-    upcomingFollowUps: [
-      {
-        id: 'fu-007',
-        type: 'Call',
-        title: 'Negotiation: floor rise charges waiver',
-        when: '17 Oct, 11:00 am',
-        completed: false,
-        createdAt: new Date(),
-      },
-    ],
-    activity: [
-      {
-        id: 'act-007',
-        text: 'Negotiation follow-up set for 17 Oct',
-        time: 'Yesterday · 6:00 pm',
-        createdAt: new Date(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 48),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'lead-008',
-    name: 'Karthik Raman',
-    phone: '+91 98410 22871',
-    email: 'karthik.raman@gmail.com',
-    property: 'Crystal Bay Residences',
-    propertyId: 'ce-001',
-    stage: 'won',
-    source: 'Website',
-    budget: 11000000,
-    budgetFormatted: '₹1.1 Cr',
-    requirement: 'B-1204',
-    unit: 'B-1204',
-    assignedAgent: { name: 'Deepak Sharma', initials: 'DS', color: '#0D9488' },
-    followUpDate: 'Completed',
-    advanceReceived: '₹5 L',
-    notes: 'Advance ₹5 L received via RTGS. Spot registration scheduled.',
-    upcomingFollowUps: [
-      {
-        id: 'fu-008',
-        type: 'Call',
-        title: 'Spot registration documentation verification',
-        when: 'Yesterday, 10:00 am',
-        completed: true,
-        createdAt: new Date(),
-      },
-    ],
-    activity: [
-      {
-        id: 'act-008',
-        text: 'Booking advance ₹5 L received via RTGS',
-        time: 'Yesterday · 11:00 am',
-        createdAt: new Date(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 72),
-    updatedAt: new Date(),
-  },
-]
-
-/**
- * GET /api/leads/meta
- * Dynamic metadata for forms (projects, agents, sources, stages, payment options)
- */
 router.get('/meta', async (req, res) => {
   try {
     const db = await getDb()
@@ -359,22 +39,44 @@ router.get('/meta', async (req, res) => {
           }))
         : []
 
-    // 2. Dynamic Agents from users collection
+    // 2. Dynamic Agents from users collection + active leads
     let users = await db
       .collection('users')
       .find({}, { projection: { name: 1, role: 1, color: 1, initials: 1 } })
       .toArray()
 
-    const defaultAgents = [
-      { name: 'Divya S', initials: 'DS', color: '#0B57D0' },
-      { name: 'Meera R', initials: 'MR', color: '#7C3AED' },
-      { name: 'Arun Kumar', initials: 'AK', color: '#DC2626' },
-      { name: 'Deepak Sharma', initials: 'DS', color: '#0D9488' },
-      { name: 'Manoj Raghavan', initials: 'MR', color: '#2563EB' },
-      { name: 'Priya Natarajan', initials: 'PN', color: '#E11D48' },
-    ]
+    const agentMap = new Map()
 
-    const agents = users && users.length > 0 ? users : defaultAgents
+    if (users && users.length > 0) {
+      users.forEach((u) => {
+        if (u.name) {
+          agentMap.set(u.name, {
+            name: u.name,
+            initials: u.initials || u.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+            color: u.color || '#0B57D0',
+          })
+        }
+      })
+    }
+
+    const leadsWithAgents = await db
+      .collection('leads')
+      .find({ 'assignedAgent.name': { $exists: true, $ne: null } }, { projection: { assignedAgent: 1 } })
+      .toArray()
+
+    leadsWithAgents.forEach((l) => {
+      if (l.assignedAgent?.name && !agentMap.has(l.assignedAgent.name)) {
+        agentMap.set(l.assignedAgent.name, {
+          name: l.assignedAgent.name,
+          initials: l.assignedAgent.initials || l.assignedAgent.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+          color: l.assignedAgent.color || '#0B57D0',
+        })
+      }
+    })
+
+    const agents = agentMap.size > 0
+      ? Array.from(agentMap.values())
+      : [{ name: 'Unassigned', initials: 'UN', color: '#64748B' }]
 
     return res.json({
       success: true,
@@ -434,14 +136,8 @@ router.get('/', async (req, res) => {
       .sort({ createdAt: -1 })
       .toArray()
 
-    // If database collection is empty, seed with initial actual leads
-    if (!leads || leads.length === 0) {
-      await db.collection('leads').insertMany(initialSeedLeads)
-      leads = await db
-        .collection('leads')
-        .find({}, { projection: { _id: 0 } })
-        .sort({ createdAt: -1 })
-        .toArray()
+    if (!leads) {
+      leads = []
     }
 
     // Ensure all leads have required fields for the detail drawer
@@ -510,7 +206,7 @@ router.get('/', async (req, res) => {
 
       return {
         ...l,
-        requirement: l.requirement || (l.budget > 20000000 ? '4 BHK Villa' : '1,500 sq ft plot'),
+        requirement: l.requirement || (l.property ? `${l.property} - Plot/Unit` : 'Plot/Unit'),
         unit: l.unit || 'Not allotted',
         upcomingFollowUps: followUps,
         activity: activities,
@@ -526,7 +222,7 @@ router.get('/', async (req, res) => {
     })
   } catch (err) {
     console.error('Error fetching leads:', err.message)
-    return res.status(500).json({ success: false, error: err.message, leads: initialSeedLeads })
+    return res.status(500).json({ success: false, error: err.message, leads: [] })
   }
 })
 
@@ -625,23 +321,40 @@ router.post('/', async (req, res) => {
           },
         ]
 
+    // Dynamic default agent
+    let leadAgent = assignedAgent
+    if (!leadAgent || !leadAgent.name) {
+      const defaultUser = await db.collection('users').findOne({}, { projection: { name: 1, color: 1, initials: 1 } })
+      if (defaultUser) {
+        leadAgent = {
+          name: defaultUser.name,
+          initials: defaultUser.initials || defaultUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+          color: defaultUser.color || '#0B57D0',
+        }
+      } else {
+        leadAgent = {
+          name: 'Unassigned',
+          initials: 'UN',
+          color: '#64748B',
+        }
+      }
+    }
+
+    const leadProperty = (property || '').trim() || 'General Enquiry'
+
     const newLead = {
       id,
       name: name.trim(),
       phone: (phone || '').trim(),
       email: (email || '').trim(),
-      property: (property || 'Crystal Bay Residences').trim(),
+      property: leadProperty,
       propertyId: propertyId || null,
       stage: stage.toLowerCase().replace(/\s+/g, ''),
       source: source || 'Walk-in',
       budget: numBudget,
       budgetFormatted: budgetFormatted || formatCurrency(numBudget),
-      assignedAgent: assignedAgent || {
-        name: 'Divya S',
-        initials: 'DS',
-        color: '#0B57D0',
-      },
-      requirement: requirement || (numBudget >= 15000000 ? '4 BHK Villa' : '1,500 sq ft plot'),
+      assignedAgent: leadAgent,
+      requirement: requirement || (leadProperty !== 'General Enquiry' ? `${leadProperty} - Plot/Unit` : 'Plot/Unit'),
       unit: unit || 'Not allotted',
       followUpDate: followUpDate || 'Today',
       advanceReceived: advanceReceived || null,
@@ -732,7 +445,7 @@ router.post('/:id/payments', async (req, res) => {
     // 3. Update lead document
     const setUpdates = {
       advanceReceived: formatted,
-      unit: unitAllotted ? unitAllotted.trim() : (lead.unit !== 'Not allotted' ? lead.unit : 'A-0907'),
+      unit: unitAllotted ? unitAllotted.trim() : (lead.unit || 'Not allotted'),
       updatedAt: new Date(),
     }
 
