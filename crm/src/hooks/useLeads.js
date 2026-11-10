@@ -21,9 +21,9 @@ export function useLeads() {
   const [searchQuery, setSearchQuery] = useState('')
 
   // Load leads from MongoDB
-  const loadLeads = useCallback(async () => {
+  const loadLeads = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true)
+      if (!isSilent) setLoading(true)
       const data = await fetchLeads()
       if (data.success && Array.isArray(data.leads)) {
         setLeads(data.leads)
@@ -31,13 +31,13 @@ export function useLeads() {
       setError(null)
     } catch (err) {
       console.error('Failed to load leads from database:', err.message)
-      setError(err.message)
+      if (!isSilent) setError(err.message)
     } finally {
-      setLoading(false)
+      if (!isSilent) setLoading(false)
     }
   }, [])
 
-  // Load dynamic metadata (properties, agents, sources, stages)
+  // Load dynamic metadata (properties, agents, sources, stages) & auto-refresh
   useEffect(() => {
     loadLeads()
     fetchLeadsMeta()
@@ -47,6 +47,19 @@ export function useLeads() {
         }
       })
       .catch((err) => console.warn('Could not load leads meta:', err.message))
+
+    // Automatically poll every 15s so new website enquiries arrive in real-time
+    const interval = setInterval(() => {
+      loadLeads(true)
+    }, 15000)
+
+    const handleFocus = () => loadLeads(true)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [loadLeads])
 
   // Move lead to a different stage (optimistic UI update + server sync)
@@ -150,8 +163,8 @@ export function useLeads() {
     const randomName = sampleNames[Math.floor(Math.random() * sampleNames.length)]
     const randomPhone = `+91 ${Math.floor(9000000000 + Math.random() * 999999999)}`
     const randomProp = propertiesList[Math.floor(Math.random() * propertiesList.length)] || {
-      name: 'Kolapakkam',
-      price: 9900000,
+      name: 'General Enquiry',
+      price: 0,
     }
 
     return await addNewLead({

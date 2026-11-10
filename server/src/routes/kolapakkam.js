@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { getDb } from '../config/db.js'
-import { KOLAPAKKAM_METADATA } from '../data/kolapakkamPlots.js'
 import { computePathCentroid } from '../lib/svgPathCentroid.js'
 
 const router = Router()
@@ -21,7 +20,7 @@ router.get('/', async (req, res) => {
     return res.json({
       success: true,
       source: 'database',
-      metadata: metadataDoc || KOLAPAKKAM_METADATA,
+      metadata: metadataDoc || null,
       plots: plots || [],
     })
   } catch (err) {
@@ -29,7 +28,7 @@ router.get('/', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: err.message,
-      metadata: KOLAPAKKAM_METADATA,
+      metadata: null,
       plots: [],
     })
   }

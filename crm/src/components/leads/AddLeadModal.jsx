@@ -44,14 +44,7 @@ export default function AddLeadModal({
       ? meta.properties.map((p) => p.name)
       : properties && properties.length > 0
       ? properties.map((p) => p.name)
-      : [
-          'Crystal Bay Residences',
-          'Crystal Greens Villas',
-          'Crystal Heights',
-          'Crystal Meadows',
-          'Kolapakkam',
-          'Somamangalam',
-        ]
+      : []
 
   const dynamicAgents = meta?.agents && meta.agents.length > 0 ? meta.agents : AGENT_OPTIONS
   const dynamicSources = meta?.sources && meta.sources.length > 0 ? meta.sources : SOURCE_OPTIONS
@@ -60,7 +53,7 @@ export default function AddLeadModal({
   const [fullName, setFullName] = useState('')
   const [mobile, setMobile] = useState('')
   const [email, setEmail] = useState('')
-  const [project, setProject] = useState(dynamicProjects[0] || 'Crystal Bay Residences')
+  const [project, setProject] = useState(dynamicProjects[0] || '')
   const [source, setSource] = useState(dynamicSources[0] || 'Walk-in')
   const [budgetLakhs, setBudgetLakhs] = useState('')
   const [assignTo, setAssignTo] = useState(dynamicAgents[0]?.name || 'Divya S')
@@ -69,18 +62,7 @@ export default function AddLeadModal({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
-  // Fallback project options if properties array is empty
-  const projectOptions =
-    properties && properties.length > 0
-      ? properties.map((p) => p.name)
-      : [
-          'Crystal Bay Residences',
-          'Crystal Greens Villas',
-          'Crystal Heights',
-          'Crystal Meadows',
-          'Kolapakkam',
-          'Somamangalam',
-        ]
+  const projectOptions = dynamicProjects
 
   const handleSubmit = async (e) => {
     e.preventDefault()

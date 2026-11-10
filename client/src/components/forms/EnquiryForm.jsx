@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { Field, Button, WhatsAppIcon } from '../ui'
-import { business, plots } from '../../data/site'
+import { business } from '../../data/site'
 
 const initialForm = {
   name: '',
@@ -30,6 +30,18 @@ export default function EnquiryForm({
   const [errors, setErrors] = useState({})
   const [sent, setSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [availablePlots, setAvailablePlots] = useState([])
+
+  useEffect(() => {
+    fetch('/api/plots')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.plots)) {
+          setAvailablePlots(data.plots.filter((p) => p.status !== 'Sold Out' && p.status !== 'Sold'))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const validate = () => {
     const errs = {}
@@ -61,22 +73,25 @@ export default function EnquiryForm({
       name: form.name.trim(),
       phone: form.phone.trim(),
       email: form.email.trim(),
+      property: form.interest.trim() || 'General Enquiry',
       interest: form.interest.trim() || 'General Enquiry',
       message: form.message.trim(),
+      source: 'Website - Enquiry Form',
+      stage: 'new',
       timestamp: new Date().toISOString(),
     }
 
-    // Try posting to enquiry endpoint
+    // Post to enquiry endpoint to store automatically in MongoDB leads collection
     try {
       await fetch('/api/enquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      }).catch(() => {
-        // Fallback silently if server endpoint not configured
+      }).catch((err) => {
+        console.warn('Enquiry POST failed:', err)
       })
-    } catch {
-      // Ignored
+    } catch (err) {
+      console.warn('Enquiry error:', err)
     }
 
     // Also dispatch to WhatsApp to guarantee lead delivery
@@ -149,13 +164,11 @@ export default function EnquiryForm({
         <Field label="Interested Plot or Layout">
           <select value={form.interest} onChange={handleChange('interest')}>
             <option value="">General Enquiry / Not Decided</option>
-            {plots
-              .filter((p) => p.status !== 'Sold Out')
-              .map((p) => (
-                <option key={p.id} value={p.name}>
-                  {p.name} ({p.location} • {p.approval})
-                </option>
-              ))}
+            {availablePlots.map((p) => (
+              <option key={p.id || p.projectId || p.name} value={p.name}>
+                {p.name} ({p.location || 'Chennai'}{p.approval ? ` • ${p.approval}` : ''})
+              </option>
+            ))}
           </select>
         </Field>
 

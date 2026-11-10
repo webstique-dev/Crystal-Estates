@@ -7,21 +7,21 @@ import { useGSAP } from '@gsap/react'
 import { gsap, isReducedMotion } from '../../lib/gsap'
 import { Section, SectionHeading, LeafDecor } from '../ui'
 import { formatPrice } from '../ui/format'
-import { projects as staticProjects } from '../../data/site'
 
 const categories = ['All', 'Farm Lands', 'Residential Plots']
 
 export function PlotCard({ plot, onEnquire }) {
   const isAvailable = plot.status === 'Available' || plot.status === 'Booking Open'
-  const isSoldOut = plot.status === 'Sold Out'
-  const hasLayout = Boolean(plot.hasLayoutMap || plot.name === 'Kolapakkam')
+  const isSoldOut = plot.status === 'Sold Out' || plot.status === 'Sold'
+  const hasLayout = Boolean(plot.hasLayoutMap || plot.layoutBackgroundUrl || plot.layoutUrl)
+  const layoutLink = `/layout-viewer?slug=${plot.layoutSlug || plot.slug || plot.id}`
 
   return (
     <div className="gallery-card plot-gallery-card">
       {/* Media without any overlays on the image */}
       <div className="gallery-card__media">
         <img
-          src={plot.image || '/images/plot-1.jpg'}
+          src={plot.image || '/images/hero-estate.jpg'}
           alt={`${plot.name} ${plot.type || 'plot'} in ${plot.location}`}
           className="gallery-card__img"
           loading="lazy"
@@ -50,7 +50,7 @@ export function PlotCard({ plot, onEnquire }) {
         </div>
 
         <p className="gallery-card__caption plot-gallery-card__specs">
-          {plot.location}, Chennai • {typeof plot.area === 'number' ? `${plot.area.toLocaleString('en-IN')} sq.ft` : plot.area}
+          {plot.location} • {typeof plot.area === 'number' ? `${plot.area.toLocaleString('en-IN')} sq.ft` : plot.area || 'Individual Plots'}
           {plot.facing ? ` • ${plot.facing} facing` : (plot.plotSizes ? ` • ${plot.plotSizes}` : '')}
         </p>
 
@@ -59,14 +59,14 @@ export function PlotCard({ plot, onEnquire }) {
           {hasLayout ? (
             <>
               <Link
-                href="/layout-viewer"
+                href={layoutLink}
                 className="btn btn--primary btn--sm plot-gallery-card__btn-main"
               >
                 <Map size={14} /> View Layout Map
               </Link>
               <button
                 type="button"
-                onClick={() => onEnquire(plot)}
+                onClick={() => onEnquire && onEnquire(plot)}
                 className="btn btn--outline btn--sm plot-gallery-card__btn-sub"
               >
                 Enquire
@@ -76,7 +76,7 @@ export function PlotCard({ plot, onEnquire }) {
             <button
               type="button"
               disabled={isSoldOut}
-              onClick={() => onEnquire(plot)}
+              onClick={() => onEnquire && onEnquire(plot)}
               className="btn btn--primary btn--sm btn--block"
               style={isSoldOut ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
             >
@@ -91,7 +91,7 @@ export function PlotCard({ plot, onEnquire }) {
 
 export default function Plots({ filters = {}, onEnquire, onReset }) {
   const sectionRef = useRef(null)
-  const [dbPlots, setDbPlots] = useState(staticProjects)
+  const [dbPlots, setDbPlots] = useState([])
   const [activeTab, setActiveTab] = useState('All')
   const [downloadModal, setDownloadModal] = useState(false)
   const [brochureLead, setBrochureLead] = useState({ name: '', phone: '' })
@@ -103,12 +103,12 @@ export default function Plots({ filters = {}, onEnquire, onReset }) {
     fetch('/api/plots')
       .then((res) => res.json())
       .then((data) => {
-        if (isMounted && data.success && data.plots?.length > 0) {
+        if (isMounted && data.success && Array.isArray(data.plots)) {
           setDbPlots(data.plots)
         }
       })
       .catch((err) => {
-        console.warn('Could not fetch plots from MongoDB API, using local fallback:', err.message)
+        console.warn('Could not fetch plots from MongoDB API:', err.message)
       })
 
     return () => {
@@ -116,28 +116,34 @@ export default function Plots({ filters = {}, onEnquire, onReset }) {
     }
   }, [])
 
-  const flagshipProject = dbPlots.find((p) => p.isFlagship) || staticProjects[0]
-  const residentialPlots = dbPlots.filter((p) => !p.isFlagship)
+  const flagshipProject = dbPlots.find((p) => p.isFlagship || p.featured) || (dbPlots.length > 0 ? dbPlots[0] : null)
+  const otherPlots = dbPlots.filter((p) => p !== flagshipProject)
 
   // Filter based on active tab
-  let displayList = residentialPlots
+  let displayList = otherPlots
   if (activeTab === 'Farm Lands') {
-    displayList = flagshipProject ? [flagshipProject] : []
+    displayList = dbPlots.filter((p) => {
+      const t = (p.propertyType || p.type || '').toLowerCase()
+      return t.includes('farm') || t.includes('agri')
+    })
   } else if (activeTab === 'Residential Plots') {
-    displayList = residentialPlots
+    displayList = dbPlots.filter((p) => {
+      const t = (p.propertyType || p.type || '').toLowerCase()
+      return t.includes('residential')
+    })
   }
 
   // Filter based on search props if provided
   if (filters?.type && filters.type !== 'All') {
-    if (filters.type === 'Farm Land') {
-      displayList = flagshipProject ? [flagshipProject] : []
-    } else if (filters.type === 'Residential Plot') {
-      displayList = residentialPlots
-    }
+    const fType = filters.type.toLowerCase()
+    displayList = dbPlots.filter((p) => {
+      const t = (p.propertyType || p.type || '').toLowerCase()
+      return t.includes(fType)
+    })
   }
 
   if (filters?.location) {
-    displayList = displayList.filter((p) => p.location.toLowerCase().includes(filters.location.toLowerCase()))
+    displayList = displayList.filter((p) => (p.location || '').toLowerCase().includes(filters.location.toLowerCase()))
   }
 
   useGSAP(
@@ -184,13 +190,42 @@ export default function Plots({ filters = {}, onEnquire, onReset }) {
     { scope: sectionRef, dependencies: [displayList.length, activeTab] },
   )
 
-  const handleBrochureSubmit = (e) => {
+  const handleBrochureSubmit = async (e) => {
     e.preventDefault()
     setBrochureDownloaded(true)
+    const dlUrl =
+      flagshipProject?.brochureUrl ||
+      (Array.isArray(flagshipProject?.documents) && flagshipProject.documents[0]?.url) ||
+      flagshipProject?.image ||
+      '/images/hero-estate.jpg'
+
+    // Automatically register brochure download lead under New Leads in CRM
+    try {
+      const payload = {
+        name: brochureLead.name.trim(),
+        phone: brochureLead.phone.trim(),
+        property: flagshipProject?.name || 'Flagship Project',
+        interest: flagshipProject?.name || 'Flagship Project',
+        source: 'Website - Brochure Download',
+        stage: 'new',
+        notes: `Downloaded digital brochure for ${flagshipProject?.name || 'Flagship Project'}`,
+      }
+
+      await fetch('/api/enquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch((err) => {
+        console.warn('Brochure enquiry POST failed:', err)
+      })
+    } catch (err) {
+      console.warn('Brochure enquiry error:', err)
+    }
+
     setTimeout(() => {
       setDownloadModal(false)
       setBrochureDownloaded(false)
-      window.open('/images/vedanthangal.jpg', '_blank')
+      window.open(dlUrl, '_blank')
     }, 1500)
   }
 
@@ -211,7 +246,7 @@ export default function Plots({ filters = {}, onEnquire, onReset }) {
                 loading="eager"
               />
               <div className="flagship-card__badge-tag">
-                <Sparkles size={14} /> Flagship Farm Land • 15 Acres
+                <Sparkles size={14} /> {flagshipProject.type || 'Property'} • {flagshipProject.area || 'Demarcated Land'}
               </div>
             </div>
 
@@ -250,14 +285,18 @@ export default function Plots({ filters = {}, onEnquire, onReset }) {
 
                 <button
                   type="button"
-                  onClick={() => onEnquire(flagshipProject)}
+                  onClick={() => onEnquire && onEnquire(flagshipProject)}
                   className="btn btn--primary btn--sm"
                 >
                   <Calendar size={15} /> Book Site Visit
                 </button>
 
                 <Link
-                  href="/layout-viewer"
+                  href={
+                    flagshipProject?.layoutBackgroundUrl || flagshipProject?.layoutSlug
+                      ? `/layout-viewer?slug=${flagshipProject.layoutSlug || flagshipProject.id}`
+                      : '/layout-viewer'
+                  }
                   className="btn btn--outline btn--sm"
                 >
                   <Map size={15} /> View Master Plan
@@ -336,7 +375,7 @@ export default function Plots({ filters = {}, onEnquire, onReset }) {
             <div className="brochure-modal__header">
               <span className="eyebrow" style={{ marginBottom: 4 }}>Official Brochure</span>
               <h3>Download Project Brochure</h3>
-              <p>Please enter your contact details to download the complete 15-Acre Vedanthangal Sandalwood Farm Land brochure & layout map.</p>
+              <p>Please enter your contact details to download the complete {flagshipProject?.name || 'Project'} brochure & layout map.</p>
             </div>
 
             {brochureDownloaded ? (

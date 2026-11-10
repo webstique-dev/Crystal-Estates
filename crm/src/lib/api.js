@@ -370,3 +370,52 @@ export async function fetchCurrentUser(token) {
   return await res.json()
 }
 
+/**
+ * Layout & Plot Management APIs
+ */
+export async function fetchLayoutDetails(slug) {
+  const res = await fetch(getApiUrl(`/api/plots/layout/${slug}`))
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to fetch layout: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+export async function saveLayoutPlots(slug, plots) {
+  const res = await fetch(getApiUrl(`/api/plots/layout/${slug}/plots`), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plots }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to save layout plots: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+export async function addOrUpdateLayoutPlot(slug, plotData) {
+  const res = await fetch(getApiUrl(`/api/plots/layout/${slug}/plot`), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(plotData),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to save plot: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+export async function deleteLayoutPlot(slug, plotNo) {
+  const res = await fetch(getApiUrl(`/api/plots/layout/${slug}/plot/${plotNo}`), {
+    method: 'DELETE',
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to delete plot: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+

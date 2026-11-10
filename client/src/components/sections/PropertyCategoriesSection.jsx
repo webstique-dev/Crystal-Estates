@@ -13,22 +13,22 @@ const categories = [
     tag: 'CMDA & DTCP Approved',
     description:
       'Gated community plots with blacktop roads, sweet groundwater, compound walls, and immediate construction clearance.',
-    locations: 'Kolapakkam • Kundrathur • Somamangalam',
-    stat: '600 – 2,400 sq.ft',
+    locations: 'Prime Residential Corridors',
+    stat: 'Individual & Gated Plots',
     href: '/projects',
-    image: '/images/kolapakkam.jpg',
+    image: '/images/plot-1.jpg',
     icon: Home,
   },
   {
     id: 'farmland',
     title: 'Agricultural & Farm Land',
-    tag: 'Managed Sandalwood',
+    tag: 'Managed Farmland',
     description:
-      'Fertile agro-forestry farm lands planted with high-value sandalwood trees, sweet water sources, and 24/7 plantation care.',
-    locations: 'Vedanthangal • Maduranthakam',
-    stat: '0.5 to 15 Acres',
+      'Fertile agro-forestry farm lands planted with high-value trees, sweet water sources, and 24/7 plantation care.',
+    locations: 'Fertile Agro Corridors',
+    stat: 'Acreage & Farm Parcels',
     href: '/projects',
-    image: '/images/vedanthangal.jpg',
+    image: '/images/hero-estate.jpg',
     icon: Trees,
   },
   {
@@ -37,10 +37,10 @@ const categories = [
     tag: 'High-Visibility Frontage',
     description:
       'Prime commercial frontages along major arterial corridors ideal for showrooms, logistics, institutions, and corporate warehouses.',
-    locations: 'ORR • GST Corridor • NH-48',
-    stat: '5,000 sq.ft – 3 Acres',
+    locations: 'Arterial Highway Corridors',
+    stat: 'Commercial Frontages',
     href: '/projects',
-    image: '/images/somamangalam.jpg',
+    image: '/images/plot-2.jpg',
     icon: Building2,
   },
   {
@@ -49,7 +49,7 @@ const categories = [
     tag: 'Strategic Land Banks',
     description:
       'Clear-titled large acreage for HNIs and family offices seeking generational wealth preservation with 30-year legal vetting.',
-    locations: 'Western & Southern Corridors',
+    locations: 'Strategic Growth Corridors',
     stat: '5+ Acres Multi-Acre Parcels',
     href: '/sell-your-land',
     image: '/images/hero-estate.jpg',

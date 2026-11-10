@@ -18,7 +18,7 @@ export const metadata = {
     siteName: 'Crystal Estates',
     images: [
       {
-        url: '/images/kolapakkam.jpg',
+        url: '/images/hero-estate.jpg',
         width: 1200,
         height: 630,
         alt: 'Plots and Land in Chennai',

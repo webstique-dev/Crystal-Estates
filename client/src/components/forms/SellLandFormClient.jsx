@@ -33,7 +33,7 @@ export default function SellLandFormClient() {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
 
@@ -41,6 +41,40 @@ export default function SellLandFormClient() {
       .filter(([, val]) => val)
       .map(([k]) => k.toUpperCase())
       .join(', ')
+
+    // Post to enquiry API to save automatically in CRM New Leads
+    try {
+      const payload = {
+        name: form.ownerName.trim(),
+        phone: form.phone.trim(),
+        email: form.email?.trim() || '',
+        property: `Land Sale: ${form.location || form.landType}`,
+        location: form.location,
+        landType: form.landType,
+        extent: form.extent,
+        expectedPrice: form.expectedPrice,
+        source: 'Website - Sell Land',
+        stage: 'new',
+        notes: [
+          `Location: ${form.location}`,
+          `Category: ${form.landType}`,
+          `Extent/Size: ${form.extent}`,
+          `Expected Price: ${form.expectedPrice}`,
+          `Available Docs: ${docList || 'None specified'}`,
+          form.notes ? `Owner Notes: ${form.notes}` : null,
+        ].filter(Boolean).join(' | '),
+      }
+
+      await fetch('/api/enquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch((err) => {
+        console.warn('Sell Land enquiry POST failed:', err)
+      })
+    } catch (err) {
+      console.warn('Sell Land enquiry error:', err)
+    }
 
     const text =
       `*SELL LAND ENQUIRY — Crystal Estates*\n` +

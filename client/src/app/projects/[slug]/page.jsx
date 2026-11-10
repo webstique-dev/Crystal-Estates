@@ -31,7 +31,7 @@ export async function generateMetadata({ params }) {
       siteName: 'Crystal Estates',
       images: [
         {
-          url: project.image || '/images/kolapakkam.jpg',
+          url: project.image || '/images/hero-estate.jpg',
           width: 1200,
           height: 630,
           alt: project.name,

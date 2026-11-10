@@ -53,7 +53,7 @@ export const allFaqs = [
   {
     category: 'Approvals',
     q: 'What is the distinction between DTCP and CMDA approved layouts?',
-    a: 'CMDA layouts are approved within the Chennai Metropolitan planning zone (such as Kolapakkam). DTCP layouts are approved in growth zones across adjoining districts including Kanchipuram and Chengalpattu (such as Somamangalam and Brammadesam). Both certifications ensure legitimate road widths, public space reservations, and clear demarcation.',
+    a: 'CMDA layouts are approved within the Chennai Metropolitan planning zone. DTCP layouts are approved in growth zones across adjoining districts including Kanchipuram and Chengalpattu. Both certifications ensure legitimate road widths, public space reservations, and clear demarcation.',
   },
   {
     category: 'Approvals',

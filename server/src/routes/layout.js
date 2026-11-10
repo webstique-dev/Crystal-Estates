@@ -3,7 +3,6 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { getDb } from '../config/db.js'
-import { KOLAPAKKAM_METADATA } from '../data/kolapakkamPlots.js'
 import { computePathCentroid } from '../lib/svgPathCentroid.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -62,46 +61,43 @@ function getSvgDetailsFromFile(filePath) {
 
 /**
  * GET /api/plots/layouts
- * Retrieve list of all available layout maps (both DB registered and discovered in client/public/plots)
+ * Retrieve list of all available layout maps strictly from MongoDB (layout_metadata and featured_plots with layouts)
  */
 router.get('/layouts', async (req, res) => {
   try {
     let dbLayouts = []
-    let db = null
+    let featuredWithLayouts = []
     try {
-      db = await getDb()
-      dbLayouts = await db.collection('layout_metadata').find({}, { projection: { _id: 0 } }).toArray()
+      const db = await getDb()
+      const [metas, plots] = await Promise.all([
+        db.collection('layout_metadata').find({}, { projection: { _id: 0 } }).toArray(),
+        db.collection('featured_plots').find(
+          {
+            $or: [
+              { layoutBackgroundUrl: { $exists: true, $ne: null } },
+              { layoutUrl: { $exists: true, $ne: null } },
+              { hasLayoutMap: true },
+            ],
+          },
+          { projection: { _id: 0 } }
+        ).toArray(),
+      ])
+      dbLayouts = metas || []
+      featuredWithLayouts = plots || []
     } catch (e) {
       console.warn('DB read error for layouts list:', e.message)
     }
 
-    // Discover all SVG files in client/public/plots
-    let svgFiles = []
-    if (fs.existsSync(plotsDir)) {
-      svgFiles = fs.readdirSync(plotsDir).filter((f) => f.endsWith('.svg'))
-    }
-
     const layoutMap = new Map()
 
-    // 1. Always ensure Kolapakkam default exists
-    layoutMap.set('kolapakkam', {
-      slug: 'kolapakkam',
-      name: KOLAPAKKAM_METADATA.name || "Crystal Garden's - Kolapakkam",
-      location: KOLAPAKKAM_METADATA.location || 'Kolapakkam, Sriperumbudur Taluk, Chennai',
-      layoutBackgroundUrl: '/plots/kolapakkam-layout.svg',
-      viewBox: KOLAPAKKAM_METADATA.viewBox || '0 0 1056 816',
-      width: KOLAPAKKAM_METADATA.width || 1056,
-      height: KOLAPAKKAM_METADATA.height || 816,
-    })
-
-    // 2. Add from DB
+    // 1. Add from layout_metadata collection
     for (const doc of dbLayouts) {
       if (!doc.slug) continue
       const slug = normalizeSlug(doc.slug)
       layoutMap.set(slug, {
         slug,
-        name: doc.name || slug.replace(/-/g, ' ').toUpperCase(),
-        location: doc.location || 'Chennai',
+        name: doc.name || doc.title || slug.replace(/-/g, ' ').toUpperCase(),
+        location: doc.location || doc.village || 'Chennai',
         layoutBackgroundUrl: doc.layoutBackgroundUrl || `/plots/${slug}-layout.svg`,
         viewBox: doc.viewBox || '0 0 1056 816',
         width: doc.width || 1056,
@@ -109,29 +105,24 @@ router.get('/layouts', async (req, res) => {
       })
     }
 
-    // 3. Add discovered SVG files from disk
-    for (const file of svgFiles) {
-      const slug = normalizeSlug(file)
-      if (!layoutMap.has(slug)) {
-        const filePath = path.join(plotsDir, file)
-        const details = getSvgDetailsFromFile(filePath) || {
-          viewBox: '0 0 1056 816',
-          width: 1056,
-          height: 816,
-        }
-        const friendlyName = slug
-          .split('-')
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(' ')
+    // 2. Add from featured_plots collection uploaded via CRM
+    for (const prop of featuredWithLayouts) {
+      const slug = normalizeSlug(
+        prop.layoutSlug || prop.slug || prop.projectId || prop.name
+      )
+      const layoutUrl = prop.layoutBackgroundUrl || prop.layoutUrl
+      if (!layoutUrl) continue
 
+      if (!layoutMap.has(slug)) {
         layoutMap.set(slug, {
           slug,
-          name: `${friendlyName} Layout`,
-          location: 'Chennai',
-          layoutBackgroundUrl: `/plots/${file}`,
-          viewBox: details.viewBox,
-          width: details.width,
-          height: details.height,
+          name: prop.name || prop.projectName || 'Layout Plan',
+          location: prop.location || 'Chennai',
+          layoutBackgroundUrl: layoutUrl,
+          layoutUrl: layoutUrl,
+          viewBox: prop.viewBox || '0 0 1056 816',
+          width: prop.width || 1056,
+          height: prop.height || 816,
         })
       }
     }
@@ -149,7 +140,7 @@ router.get('/layouts', async (req, res) => {
 
 /**
  * GET /api/plots/layout/:slug
- * Fetch metadata and plot boundaries for a specific layout slug
+ * Fetch metadata and plot boundaries dynamically for a specific layout slug from MongoDB
  */
 router.get('/layout/:slug', async (req, res) => {
   try {
@@ -163,61 +154,64 @@ router.get('/layout/:slug', async (req, res) => {
       console.warn('DB error in /api/plots/layout/:slug:', e.message)
     }
 
-    // Determine collection name
-    const collectionName = slug === 'kolapakkam' ? 'kolapakkam_layout' : `${slug}_layout`
+    if (!db) {
+      return res.status(503).json({ success: false, error: 'Database unavailable' })
+    }
 
-    let plots = []
-    let metadataDoc = null
+    const collectionName = `${slug}_layout`
 
-    if (db) {
-      try {
-        const [dbPlots, meta] = await Promise.all([
-          db.collection(collectionName).find({}, { projection: { _id: 0 } }).sort({ plotNo: 1, id: 1 }).toArray(),
-          db.collection('layout_metadata').findOne({ slug }, { projection: { _id: 0 } }),
-        ])
-        plots = dbPlots || []
-        metadataDoc = meta
-      } catch (dbErr) {
-        console.warn('DB query error for layout:', dbErr.message)
+    const [dbPlots, metaDoc, propertyDoc] = await Promise.all([
+      db.collection(collectionName).find({}, { projection: { _id: 0 } }).sort({ plotNo: 1, id: 1 }).toArray().catch(() => []),
+      db.collection('layout_metadata').findOne({ slug }, { projection: { _id: 0 } }),
+      db.collection('featured_plots').findOne(
+        {
+          $or: [
+            { layoutSlug: slug },
+            { slug },
+            { projectId: slug },
+            { id: slug },
+          ],
+        },
+        { projection: { _id: 0 } }
+      ),
+    ])
+
+    let metadataDoc = metaDoc
+
+    if (!metadataDoc && propertyDoc) {
+      const layoutUrl = propertyDoc.layoutBackgroundUrl || propertyDoc.layoutUrl || null
+      metadataDoc = {
+        slug,
+        name: propertyDoc.name || propertyDoc.projectName,
+        title: propertyDoc.name || propertyDoc.projectName,
+        location: propertyDoc.location || '',
+        village: propertyDoc.village || propertyDoc.location || '',
+        taluk: propertyDoc.taluk || '',
+        district: propertyDoc.district || '',
+        sNo: propertyDoc.surveyNumber || '',
+        layoutBackgroundUrl: layoutUrl,
+        layoutUrl: layoutUrl,
+        viewBox: propertyDoc.viewBox || '0 0 1056 816',
+        width: propertyDoc.width || 1056,
+        height: propertyDoc.height || 816,
       }
     }
 
-    // If metadata not in DB, inspect file on disk
     if (!metadataDoc) {
-      if (slug === 'kolapakkam') {
-        metadataDoc = KOLAPAKKAM_METADATA
-      } else {
-        // Look for file on disk
-        const possibleFiles = [
-          path.join(plotsDir, `${slug}-layout.svg`),
-          path.join(plotsDir, `${slug}.svg`),
-        ]
-        let foundFile = possibleFiles.find((p) => fs.existsSync(p))
-        let svgDetails = foundFile ? getSvgDetailsFromFile(foundFile) : null
-
-        const friendlyName = slug
-          .split('-')
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(' ')
-
-        metadataDoc = {
-          slug,
-          name: `${friendlyName} Layout`,
-          location: 'Chennai',
-          layoutBackgroundUrl: foundFile ? `/plots/${path.basename(foundFile)}` : `/plots/${slug}-layout.svg`,
-          viewBox: svgDetails?.viewBox || '0 0 1056 816',
-          width: svgDetails?.width || 1056,
-          height: svgDetails?.height || 816,
-        }
-      }
+      return res.status(404).json({
+        success: false,
+        error: `Layout not found for slug: ${slug}`,
+      })
     }
+
+    const resolvedPlots = (dbPlots && dbPlots.length > 0) ? dbPlots : (propertyDoc?.plots || [])
 
     return res.json({
       success: true,
       slug,
-      source: db ? 'database' : 'filesystem',
+      source: 'database',
       metadata: metadataDoc,
-      plots,
+      plots: resolvedPlots,
     })
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message })
@@ -225,10 +219,89 @@ router.get('/layout/:slug', async (req, res) => {
 })
 
 /**
- * POST /api/plots/layout/:slug
- * Add plot to a specific layout
+ * PUT /api/plots/layout/:slug/plots
+ * Replace or batch update all plots for a specific layout
  */
-router.post('/layout/:slug', async (req, res) => {
+router.put(['/layout/:slug/plots', '/layout/:slug/batch'], async (req, res) => {
+  try {
+    const slug = normalizeSlug(req.params.slug)
+    const collectionName = slug === 'kolapakkam' ? 'kolapakkam_layout' : `${slug}_layout`
+    const { plots = [] } = req.body
+
+    const db = await getDb()
+
+    // Format all plots
+    const formattedPlots = plots.map((p, idx) => {
+      let centroid = { textX: p.textX, textY: p.textY }
+      if ((p.textX === undefined || p.textY === undefined) && p.svgPath) {
+        centroid = computePathCentroid(p.svgPath) || { textX: 100, textY: 100 }
+      }
+
+      const numId = parseInt(p.plotNo, 10)
+
+      return {
+        id: p.id || (!isNaN(numId) ? numId : idx + 1),
+        plotNo: String(p.plotNo || idx + 1),
+        status: p.status || 'Available',
+        facing: p.facing || 'East',
+        area: p.area || '1200 sq.ft',
+        dimensions: typeof p.dimensions === 'string' ? p.dimensions : `${p.width || "30'0\""} x ${p.length || "40'0\""}`,
+        width: p.width || "30'0\"",
+        length: p.length || "40'0\"",
+        price: p.price || '',
+        roadWidth: p.roadWidth || '30 ft',
+        type: p.type || 'Residential Plot',
+        surveyNo: p.surveyNo || '',
+        svgPath: p.svgPath || '',
+        textX: Math.round(centroid.textX || centroid.x || 100),
+        textY: Math.round(centroid.textY || centroid.y || 100),
+        updatedAt: new Date(),
+      }
+    })
+
+    // 1. Update layout collection in DB
+    await db.collection(collectionName).deleteMany({})
+    if (formattedPlots.length > 0) {
+      await db.collection(collectionName).insertMany(formattedPlots)
+    }
+
+    // 2. Sync to featured_plots collection
+    await db.collection('featured_plots').updateMany(
+      {
+        $or: [
+          { layoutSlug: slug },
+          { slug },
+          { projectId: slug },
+          { id: slug },
+        ],
+      },
+      {
+        $set: {
+          plots: formattedPlots,
+          totalPlots: formattedPlots.length,
+          availablePlots: formattedPlots.filter((p) => p.status === 'Available').length,
+          hasLayoutMap: true,
+          updatedAt: new Date(),
+        },
+      }
+    )
+
+    return res.json({
+      success: true,
+      message: `${formattedPlots.length} plots saved to ${slug} layout`,
+      plots: formattedPlots,
+    })
+  } catch (err) {
+    console.error('Error saving layout plots:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+/**
+ * POST /api/plots/layout/:slug (and /api/plots/layout/:slug/plot)
+ * Add or update a single plot in a specific layout
+ */
+router.post(['/layout/:slug', '/layout/:slug/plot'], async (req, res) => {
   try {
     const slug = normalizeSlug(req.params.slug)
     const collectionName = slug === 'kolapakkam' ? 'kolapakkam_layout' : `${slug}_layout`
@@ -239,9 +312,13 @@ router.post('/layout/:slug', async (req, res) => {
       facing = 'East',
       width = "40'0\"",
       length = "30'0\"",
+      dimensions,
       area = '1200 sq.ft',
       price = '₹ 42.00 Lakhs',
-      svgPath,
+      roadWidth = '30 ft',
+      type = 'Residential Plot',
+      surveyNo = '',
+      svgPath = '',
       textX,
       textY,
     } = req.body
@@ -254,9 +331,9 @@ router.post('/layout/:slug', async (req, res) => {
     const numericPlotNo = parseInt(plotNo, 10)
 
     // Calculate centroid if coordinates not explicitly provided
-    let centroid = { x: textX, y: textY }
+    let centroid = { textX, textY }
     if ((textX === undefined || textY === undefined) && svgPath) {
-      centroid = computePathCentroid(svgPath)
+      centroid = computePathCentroid(svgPath) || { textX: 100, textY: 100 }
     }
 
     const newPlotDoc = {
@@ -264,12 +341,17 @@ router.post('/layout/:slug', async (req, res) => {
       plotNo: String(plotNo),
       status,
       facing,
-      dimensions: { width, length },
+      dimensions: typeof dimensions === 'string' ? dimensions : `${width} x ${length}`,
+      width,
+      length,
       area,
       price,
+      roadWidth,
+      type,
+      surveyNo,
       svgPath: svgPath || '',
-      textX: Math.round(centroid.x || 100),
-      textY: Math.round(centroid.y || 100),
+      textX: Math.round(centroid.textX || centroid.x || 100),
+      textY: Math.round(centroid.textY || centroid.y || 100),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -278,6 +360,28 @@ router.post('/layout/:slug', async (req, res) => {
       { plotNo: String(plotNo) },
       { $set: newPlotDoc },
       { upsert: true }
+    )
+
+    // Synchronize to featured_plots.plots
+    const allPlots = await db.collection(collectionName).find({}, { projection: { _id: 0 } }).toArray()
+    await db.collection('featured_plots').updateMany(
+      {
+        $or: [
+          { layoutSlug: slug },
+          { slug },
+          { projectId: slug },
+          { id: slug },
+        ],
+      },
+      {
+        $set: {
+          plots: allPlots,
+          totalPlots: allPlots.length,
+          availablePlots: allPlots.filter((p) => p.status === 'Available').length,
+          hasLayoutMap: true,
+          updatedAt: new Date(),
+        },
+      }
     )
 
     return res.status(201).json({
@@ -333,14 +437,14 @@ router.patch('/layout/:slug', async (req, res) => {
 })
 
 /**
- * DELETE /api/plots/layout/:slug
+ * DELETE /api/plots/layout/:slug (and /api/plots/layout/:slug/plot/:plotNo)
  * Delete a plot from a specific layout
  */
-router.delete('/layout/:slug', async (req, res) => {
+router.delete(['/layout/:slug', '/layout/:slug/plot/:plotNo'], async (req, res) => {
   try {
     const slug = normalizeSlug(req.params.slug)
     const collectionName = slug === 'kolapakkam' ? 'kolapakkam_layout' : `${slug}_layout`
-    const plotNo = req.query.plotNo || req.body.plotNo
+    const plotNo = req.params.plotNo || req.query.plotNo || req.body.plotNo
 
     if (!plotNo) {
       return res.status(400).json({ success: false, error: 'plotNo parameter is required' })
@@ -349,10 +453,32 @@ router.delete('/layout/:slug', async (req, res) => {
     const db = await getDb()
     const result = await db.collection(collectionName).deleteOne({ plotNo: String(plotNo) })
 
+    // Sync to featured_plots
+    const remainingPlots = await db.collection(collectionName).find({}, { projection: { _id: 0 } }).toArray()
+    await db.collection('featured_plots').updateMany(
+      {
+        $or: [
+          { layoutSlug: slug },
+          { slug },
+          { projectId: slug },
+          { id: slug },
+        ],
+      },
+      {
+        $set: {
+          plots: remainingPlots,
+          totalPlots: remainingPlots.length,
+          availablePlots: remainingPlots.filter((p) => p.status === 'Available').length,
+          updatedAt: new Date(),
+        },
+      }
+    )
+
     return res.json({
       success: true,
       deletedCount: result.deletedCount,
       message: `Plot ${plotNo} deleted from ${slug}`,
+      remainingPlots: remainingPlots.length,
     })
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message })

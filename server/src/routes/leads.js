@@ -344,9 +344,9 @@ router.get('/meta', async (req, res) => {
   try {
     const db = await getDb()
 
-    // 1. Dynamic Projects from plots collection
+    // 1. Dynamic Projects from featured_plots collection
     let plots = await db
-      .collection('plots')
+      .collection('featured_plots')
       .find({}, { projection: { name: 1, id: 1, projectId: 1, price: 1, priceFormatted: 1, type: 1 } })
       .toArray()
 
@@ -357,14 +357,7 @@ router.get('/meta', async (req, res) => {
             name: p.name,
             priceFormatted: p.priceFormatted,
           }))
-        : [
-            { id: 'p-1', name: 'Crystal Bay Residences' },
-            { id: 'p-2', name: 'Crystal Greens Villas' },
-            { id: 'p-3', name: 'Crystal Heights' },
-            { id: 'p-4', name: 'Crystal Meadows' },
-            { id: 'p-5', name: 'Kolapakkam' },
-            { id: 'p-6', name: 'Somamangalam' },
-          ]
+        : []
 
     // 2. Dynamic Agents from users collection
     let users = await db

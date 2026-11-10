@@ -1,7 +1,9 @@
-import { projects } from '../data/site'
+import { fetchPlots } from '../lib/api'
 import { newsArticles } from '../data/news'
 
-export default function sitemap() {
+export const dynamic = 'force-dynamic'
+
+export default async function sitemap() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crystalestates.in'
   const now = new Date().toISOString()
 
@@ -22,7 +24,9 @@ export default function sitemap() {
     priority: route === '' ? 1.0 : route === '/projects' ? 0.9 : 0.8,
   }))
 
-  const projectRoutes = projects.map((proj) => ({
+  const dynamicPlots = await fetchPlots().catch(() => [])
+
+  const projectRoutes = (dynamicPlots || []).map((proj) => ({
     url: `${baseUrl}/projects/${proj.slug || proj.id}`,
     lastModified: now,
     changeFrequency: 'weekly',

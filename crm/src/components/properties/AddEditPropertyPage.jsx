@@ -29,7 +29,9 @@ import {
   uploadVideo,
   createPlot,
   updatePlot,
+  fetchLayoutDetails,
 } from '../../lib/api'
+import PlotManagementSection from './PlotManagementSection'
 
 function generateProjectId() {
   const randomNum = Math.floor(100000 + Math.random() * 900000)
@@ -105,6 +107,25 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
   )
   const [layoutFile, setLayoutFile] = useState(null)
   const layoutInputRef = useRef(null)
+
+  // Layout Plots & Path Data State
+  const [layoutPlots, setLayoutPlots] = useState(
+    Array.isArray(initialData?.plots) ? initialData.plots : []
+  )
+
+  // Load existing layout plots from database if editing a property
+  useEffect(() => {
+    const slug = initialData?.layoutSlug || initialData?.slug || initialData?.id
+    if (slug && (!initialData?.plots || initialData.plots.length === 0)) {
+      fetchLayoutDetails(slug)
+        .then((data) => {
+          if (data.success && Array.isArray(data.plots) && data.plots.length > 0) {
+            setLayoutPlots(data.plots)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [initialData])
 
   // Videos State
   const [videoList, setVideoList] = useState(
@@ -357,7 +378,7 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
         mapLocation: (formData.mapLocation || '').trim(),
         mapUrl: (formData.mapLocation || '').trim(),
         googleMapsUrl: (formData.mapLocation || '').trim(),
-        hasLayoutMap: Boolean(layoutBackgroundUrl || layoutUrl),
+        hasLayoutMap: Boolean(layoutBackgroundUrl || layoutUrl || layoutPlots.length > 0),
         layoutSlug,
         layoutBackgroundUrl,
         layoutUrl,
@@ -366,6 +387,9 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
           layoutBackgroundUrl && /\.(png|jpe?g|webp|gif|svg)$/i.test(layoutBackgroundUrl)
             ? layoutBackgroundUrl
             : initialData?.layoutImage || null,
+        plots: layoutPlots,
+        totalPlots: layoutPlots.length,
+        availablePlots: layoutPlots.filter((p) => p.status === 'Available').length,
       }
 
       let savedResult
@@ -1075,6 +1099,16 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
                   </div>
                 )}
               </div>
+
+              {/* Interactive Plots & Path Data (Available after uploading or updating layout) */}
+              {(layoutFile || existingLayoutUrl || layoutPlots.length > 0) && (
+                <PlotManagementSection
+                  plots={layoutPlots}
+                  onChange={setLayoutPlots}
+                  layoutUrl={existingLayoutUrl || (layoutFile ? layoutFile.name : null)}
+                  projectName={formData.name}
+                />
+              )}
 
               {/* Legal Documents */}
               <div className="space-y-2 pt-3 border-t border-slate-200">

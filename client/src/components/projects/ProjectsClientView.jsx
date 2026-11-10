@@ -5,7 +5,6 @@ import { Filter, Search, RotateCcw } from 'lucide-react'
 import { Container, Section } from '../ui'
 import { ProjectGrid } from './ProjectGrid'
 import { fetchPlots, normalizePlot } from '../../lib/api'
-import { searchOptions } from '../../data/site'
 
 const initialFilterState = {
   type: 'All',

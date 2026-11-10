@@ -64,12 +64,18 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
   // ─────────────────────────────────────────────────────────────
   // 1. DYNAMIC SECTION 1: PROJECT LAYOUT DATA
   // ─────────────────────────────────────────────────────────────
-  const hasLayout = Boolean(
-    project.hasLayoutMap ||
-    project.layoutImage ||
-    project.layoutUrl ||
+  const layoutUrl =
     project.layoutBackgroundUrl ||
-    project.layoutPlan
+    project.layoutUrl ||
+    project.layoutPlan ||
+    project.layoutImage ||
+    null
+
+  const hasLayout = Boolean(project.hasLayoutMap || layoutUrl)
+  const isSvgLayout = Boolean(layoutUrl && /\.svg($|\?)/i.test(layoutUrl))
+  const isPdfLayout = Boolean(layoutUrl && /\.pdf($|\?)/i.test(layoutUrl))
+  const isImageLayout = Boolean(
+    layoutUrl && /\.(png|jpe?g|webp|gif)($|\?)/i.test(layoutUrl)
   )
 
   // ─────────────────────────────────────────────────────────────
@@ -140,12 +146,25 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
       } else if (doc && typeof doc === 'object' && (doc.title || doc.name)) {
         availableDocuments.push({
           title: doc.title || doc.name,
-          desc: doc.desc || doc.description || null,
+          desc: doc.desc || doc.description || (doc.size ? `Size: ${doc.size}` : null),
           url: doc.url || doc.file || null,
           isDownload: Boolean(doc.url || doc.file),
         })
       }
     })
+  }
+
+  // Include uploaded layout blueprint file if not already in documents
+  if (project.layoutUrl) {
+    const isAlreadyDoc = availableDocuments.some((d) => d.url === project.layoutUrl)
+    if (!isAlreadyDoc) {
+      availableDocuments.push({
+        title: project.layoutFileName || `${project.name} Master Layout Blueprint`,
+        desc: 'Official layout blueprint file uploaded via CRM.',
+        url: project.layoutUrl,
+        isDownload: true,
+      })
+    }
   }
 
   // Real brochure URL if provided
@@ -444,40 +463,131 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                 </p>
               </div>
 
-              {project.hasLayoutMap ? (
+              {(project.hasLayoutMap || isSvgLayout || (Array.isArray(project.plots) && project.plots.length > 0)) && layoutUrl ? (
                 <div>
-                  <PlotViewer />
+                  <PlotViewer
+                    key={project.id || project.layoutSlug || layoutUrl}
+                    initialPlots={Array.isArray(project.plots) && project.plots.length > 0 ? project.plots : null}
+                    fetchUrl={`/api/plots/layout/${project.layoutSlug || project.slug || (project.name ? project.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-') : project.id)}`}
+                    backgroundUrl={layoutUrl}
+                    metadata={{
+                      title: project.name,
+                      sNo: project.surveyNumber || '',
+                      village: project.village || project.location || '',
+                      taluk: project.taluk || '',
+                      layoutBackgroundUrl: layoutUrl,
+                      viewBox: project.viewBox || '0 0 1056 816',
+                    }}
+                    whatsappNumber="919444000000"
+                    backHref={`/projects/${project.slug || project.id}`}
+                  />
                   <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button href="/layout-viewer" variant="outline" size="sm">
+                    <Button
+                      href={`/layout-viewer?slug=${project.layoutSlug || project.slug || project.id}`}
+                      variant="outline"
+                      size="sm"
+                    >
                       <Maximize2 size={14} />
                       <span>Open Fullscreen Interactive Layout Viewer</span>
                     </Button>
                   </div>
                 </div>
-              ) : project.layoutImage ? (
+              ) : isPdfLayout ? (
+                <div
+                  style={{
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    border: '1px solid var(--line)',
+                    background: '#ffffff',
+                    padding: '20px',
+                    boxShadow: 'var(--shadow-sm)',
+                  }}
+                >
+                  <div
+                    style={{
+                      height: '520px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      border: '1px solid #e2e8f0',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    <iframe
+                      src={layoutUrl}
+                      title={`${project.name} Blueprint PDF`}
+                      style={{ width: '100%', height: '100%', border: 0 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <span style={{ fontSize: '14px', color: 'var(--ink-2)' }}>
+                      <strong>{project.layoutFileName || 'Layout Blueprint (PDF)'}</strong>
+                    </span>
+                    <a
+                      href={layoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn--primary btn--sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <Download size={14} />
+                      <span>Open / Download Blueprint PDF</span>
+                    </a>
+                  </div>
+                </div>
+              ) : isImageLayout || project.layoutImage ? (
                 <div
                   style={{
                     borderRadius: '12px',
                     overflow: 'hidden',
                     border: '1px solid var(--line)',
                     boxShadow: 'var(--shadow-sm)',
+                    position: 'relative',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    const imgToOpen = layoutUrl || project.layoutImage
+                    const idx = projectImages.indexOf(imgToOpen)
+                    if (idx >= 0) openLightbox(idx)
                   }}
                 >
                   <img
-                    src={project.layoutImage}
+                    src={layoutUrl || project.layoutImage}
                     alt={`${project.name} Master Layout Plan`}
-                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                    style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '600px', objectFit: 'contain' }}
                   />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '12px',
+                      right: '12px',
+                      background: 'rgba(15, 61, 46, 0.9)',
+                      color: '#ffffff',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <Maximize2 size={13} /> Click to expand blueprint
+                  </div>
                 </div>
-              ) : project.layoutUrl ? (
+              ) : layoutUrl ? (
                 <div style={{ padding: '24px', background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', textAlign: 'center' }}>
                   <p style={{ fontSize: '14px', color: 'var(--ink-2)', marginBottom: '14px' }}>
-                    Official layout map documentation is available for online viewing.
+                    Uploaded layout blueprint file (<strong>{project.layoutFileName || 'Blueprint File'}</strong>) is ready for download and viewing.
                   </p>
-                  <Button href={project.layoutUrl} variant="primary" size="sm">
+                  <a
+                    href={layoutUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn--primary btn--sm"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
                     <Layers size={14} />
-                    <span>View Sanctioned Layout Drawing</span>
-                  </Button>
+                    <span>View / Download Sanctioned Layout File</span>
+                  </a>
                 </div>
               ) : null}
             </div>

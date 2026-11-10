@@ -23,7 +23,7 @@ export const metadata = {
     siteName: 'Crystal Estates',
     images: [
       {
-        url: '/images/vedanthangal.jpg',
+        url: '/images/hero-estate.jpg',
         width: 1200,
         height: 630,
         alt: 'Crystal Estates Chennai',

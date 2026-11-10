@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { MapPin, Trash2, Edit2, FileCode2, ImageOff, Video, FileText } from 'lucide-react'
+import { MapPin, Trash2, Edit2, FileCode2, ImageOff, Video, FileText, Layers } from 'lucide-react'
 
 // Status badge styling for properties
 const STATUS_STYLES = {
@@ -44,9 +44,9 @@ export default function PropertyCard({ property, onEdit, onDelete }) {
     (property.layoutBackgroundUrl && property.layoutBackgroundUrl.endsWith('.svg')) ||
     property.layoutSlug
   )
-  const fallbackSlug = property.name ? property.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'kolapakkam'
+  const fallbackSlug = property.name ? property.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : (property.id || '')
   const targetLayoutLink = isSvgLayout
-    ? `http://localhost:3000/layout-viewer?layout=${property.layoutSlug || fallbackSlug}`
+    ? `http://localhost:3000/layout-viewer?slug=${property.layoutSlug || fallbackSlug}`
     : property.layoutBackgroundUrl || property.layoutUrl
 
   const hasDocs = Boolean(property.documents && property.documents.length > 0)
@@ -248,6 +248,22 @@ export default function PropertyCard({ property, onEdit, onDelete }) {
           </span>
 
           <div className="flex items-center gap-2.5 shrink-0">
+            {(hasLayout || (property.plots && property.plots.length > 0)) && (
+              <button
+                type="button"
+                onClick={() => onEdit && onEdit(property)}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0B57D0] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition"
+                title="Manage Plot Details & Path Data"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>
+                  {property.plots && property.plots.length > 0
+                    ? `${property.plots.length} Plots`
+                    : '+ Add Plot'}
+                </span>
+              </button>
+            )}
+
             {hasLayout && (
               <a
                 href={targetLayoutLink}

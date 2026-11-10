@@ -20,11 +20,68 @@ export default function GalleryClientView() {
   const [activeTab, setActiveTab] = useState('All')
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const [activeVideo, setActiveVideo] = useState(null)
+  const [mediaList, setMediaList] = useState(galleryMedia)
+
+  useEffect(() => {
+    fetch('/api/plots')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.plots) && data.plots.length > 0) {
+          const dynamicMedia = []
+          data.plots.forEach((p) => {
+            const imgs = Array.isArray(p.images) ? p.images : p.image ? [p.image] : []
+            imgs.forEach((img, i) => {
+              dynamicMedia.push({
+                id: `dyn-${p.id || p.projectId}-img-${i}`,
+                title: `${p.name} - Site Photo`,
+                category: 'Site Photos',
+                image: img,
+                location: p.location,
+                caption: p.description || `${p.name} in ${p.location}`,
+              })
+            })
+            if (p.layoutBackgroundUrl || p.layoutImage) {
+              dynamicMedia.push({
+                id: `dyn-${p.id || p.projectId}-layout`,
+                title: `${p.name} - Layout Map`,
+                category: 'Layouts',
+                image: p.layoutImage || p.layoutBackgroundUrl,
+                location: p.location,
+                caption: `Sanctioned layout plan for ${p.name}`,
+              })
+            }
+            if (Array.isArray(p.videos)) {
+              p.videos.forEach((v, vi) => {
+                const vUrl = typeof v === 'string' ? v : v.url
+                if (vUrl) {
+                  dynamicMedia.push({
+                    id: `dyn-${p.id || p.projectId}-vid-${vi}`,
+                    title: `${p.name} - Video`,
+                    category: 'Videos',
+                    image: p.image || '/images/hero-estate.jpg',
+                    videoUrl: vUrl,
+                    location: p.location,
+                    caption: `Video walkthrough of ${p.name}`,
+                  })
+                }
+              })
+            }
+          })
+          if (dynamicMedia.length > 0) {
+            setMediaList((prev) => [
+              ...dynamicMedia,
+              ...prev.filter((m) => !dynamicMedia.some((d) => d.image === m.image)),
+            ])
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const filteredMedia =
     activeTab === 'All'
-      ? galleryMedia
-      : galleryMedia.filter((item) => item.category === activeTab)
+      ? mediaList
+      : mediaList.filter((item) => item.category === activeTab)
 
   const openMedia = (item, idx) => {
     if (item.category === 'Videos' && item.videoUrl) {

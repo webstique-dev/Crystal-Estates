@@ -17,8 +17,8 @@ import { formatPrice } from '../../lib/api'
 export function ProjectCard({ project, className = '' }) {
   if (!project) return null
 
-  const isFlagship = project?.isFlagship || project?.type === 'Farm Land' || project?.propertyType === 'Agricultural'
-  const fallbackImage = isFlagship ? '/images/vedanthangal.jpg' : '/images/kolapakkam.jpg'
+  const isFlagship = Boolean(project?.isFlagship || project?.featured)
+  const fallbackImage = '/images/hero-estate.jpg'
 
   const primaryImage =
     project.image ||

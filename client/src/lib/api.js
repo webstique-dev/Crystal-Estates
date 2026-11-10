@@ -158,7 +158,7 @@ export function normalizePlot(plot) {
   const images = Array.from(new Set(rawImages))
   const primaryImage =
     plot.image ||
-    (images.length > 0 ? images[0] : '/images/kolapakkam.jpg')
+    (images.length > 0 ? images[0] : '/images/hero-estate.jpg')
 
   // Videos (support both string URLs and uploaded video objects { name, url, size })
   const rawVideos = []
@@ -242,18 +242,19 @@ export function normalizePlot(plot) {
     hasLayoutMap: Boolean(
       plot.hasLayoutMap ||
         plot.layoutBackgroundUrl ||
-        plot.layoutSlug ||
-        name.toLowerCase().includes('kolapakkam')
+        plot.layoutUrl ||
+        plot.layoutSlug
     ),
-    layoutSlug:
-      plot.layoutSlug ||
-      (name.toLowerCase().includes('kolapakkam') ? 'kolapakkam' : null),
-    layoutBackgroundUrl: plot.layoutBackgroundUrl || null,
+    layoutSlug: plot.layoutSlug || null,
+    layoutBackgroundUrl: plot.layoutBackgroundUrl || plot.layoutUrl || null,
+    layoutUrl: plot.layoutUrl || plot.layoutBackgroundUrl || null,
+    layoutFileName: plot.layoutFileName || null,
+    layoutImage: plot.layoutImage || null,
   }
 }
 
 /**
- * Fetch all plots from API
+ * Fetch all plots dynamically from MongoDB API
  */
 export async function fetchPlots() {
   try {
@@ -262,13 +263,13 @@ export async function fetchPlots() {
     const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
-    if (data.success && Array.isArray(data.plots) && data.plots.length > 0) {
+    if (data.success && Array.isArray(data.plots)) {
       return data.plots.map(normalizePlot)
     }
   } catch (err) {
     console.warn('Error fetching plots from API:', err.message)
   }
-  return null
+  return []
 }
 
 /**

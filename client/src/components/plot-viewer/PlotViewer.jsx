@@ -13,7 +13,6 @@ import {
   ArrowLeft,
 } from 'lucide-react'
 import { WhatsAppIcon } from '../ui'
-import { KOLAPAKKAM_METADATA } from '../../data/kolapakkamPlots'
 import { computePathCentroid } from '@/lib/svgPathCentroid'
 import './PlotViewer.css'
 
@@ -21,23 +20,31 @@ import './PlotViewer.css'
  * React Interactive Plot Viewer Component
  * Displays a real estate layout map with dynamic plots loaded from API/Database,
  * pan & zoom, hover tooltips, status filters, and pre-filled WhatsApp inquiry.
- * All plot boundaries are loaded dynamically from the database.
+ * All plot boundaries and layouts are loaded dynamically from the database.
  */
 export default function PlotViewer({
   initialPlots = null,
-  fetchUrl = '/api/plots/kolapakkam',
-  backgroundUrl = KOLAPAKKAM_METADATA.layoutBackgroundUrl,
-  viewBox = KOLAPAKKAM_METADATA.viewBox,
-  metadata = KOLAPAKKAM_METADATA,
-  whatsappNumber = '919444280722',
+  fetchUrl = null,
+  backgroundUrl = null,
+  viewBox = null,
+  metadata = null,
+  whatsappNumber = '919444000000',
   className = '',
   onPlotSelect = null,
   backHref = null,
 }) {
   // Data state loaded purely from API or passed props
   const [plots, setPlots] = useState(initialPlots || [])
+  const [meta, setMeta] = useState(metadata || {})
   const [loading, setLoading] = useState(Boolean(!initialPlots && fetchUrl))
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (metadata) setMeta(metadata)
+  }, [metadata])
+
+  const activeBackgroundUrl = backgroundUrl || meta?.layoutBackgroundUrl || meta?.layoutUrl || null
+  const activeViewBox = viewBox || meta?.viewBox || '0 0 1056 816'
 
   // Status Filter state: 'All' | 'Available' | 'Booked' | 'Sold' | 'Blocked'
   const [activeFilter, setActiveFilter] = useState('All')
@@ -76,6 +83,7 @@ export default function PlotViewer({
       })
       .then((data) => {
         if (isMounted) {
+          if (data.metadata) setMeta(data.metadata)
           setPlots(data.plots || [])
           setLoading(false)
         }
@@ -100,18 +108,18 @@ export default function PlotViewer({
     if (!containerRef.current) return
     const containerWidth = containerRef.current.clientWidth
     const containerHeight = containerRef.current.clientHeight
-    const [, , vbW, vbH] = viewBox.split(' ').map(Number)
+    const [, , vbW, vbH] = (activeViewBox || '0 0 1056 816').split(' ').map(Number)
 
-    const scaleX = (containerWidth - 40) / vbW
-    const scaleY = (containerHeight - 40) / vbH
+    const scaleX = (containerWidth - 40) / (vbW || 1056)
+    const scaleY = (containerHeight - 40) / (vbH || 816)
     const initialScale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.7), 1.3)
 
-    const initialPanX = (containerWidth - vbW * initialScale) / 2
-    const initialPanY = (containerHeight - vbH * initialScale) / 2
+    const initialPanX = (containerWidth - (vbW || 1056) * initialScale) / 2
+    const initialPanY = (containerHeight - (vbH || 816) * initialScale) / 2
 
     setScale(initialScale)
     setPan({ x: initialPanX, y: initialPanY })
-  }, [viewBox])
+  }, [activeViewBox])
 
   useEffect(() => {
     handleResetZoom()
@@ -285,9 +293,18 @@ export default function PlotViewer({
   // Build WhatsApp Inquiry URL
   const getWhatsAppUrl = (plot) => {
     if (!plot) return '#'
-    const message = `Hello Crystal Estates, I am interested in ${metadata?.title || 'Crystal Garden\'s'} Plot No ${plot.plotNo} (${plot.area}, ${plot.facing} facing). Please share current pricing and schedule a site visit.`
+    const layoutTitle = meta?.title || meta?.name || 'Crystal Estates'
+    const message = `Hello Crystal Estates, I am interested in ${layoutTitle} Plot No ${plot.plotNo} (${plot.area}, ${plot.facing} facing). Please share current pricing and schedule a site visit.`
     return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
   }
+
+  const layoutTitle = meta?.title || meta?.name || 'Layout Master Plan'
+  const subtitleParts = [
+    meta?.sNo ? `S.No: ${meta.sNo}` : null,
+    meta?.village,
+    meta?.taluk ? `${meta.taluk} Taluk` : null,
+    meta?.district || meta?.location,
+  ].filter(Boolean)
 
   return (
     <div
@@ -310,13 +327,15 @@ export default function PlotViewer({
               </Link>
             )}
             <h3 className="plot-viewer__title">
-              {metadata.title}
+              {layoutTitle}
               <span className="plot-viewer__badge">Interactive Plan</span>
             </h3>
           </div>
-          <p className="plot-viewer__subtitle">
-            S.No: {metadata.sNo} • {metadata.village}, {metadata.taluk} Taluk
-          </p>
+          {subtitleParts.length > 0 && (
+            <p className="plot-viewer__subtitle">
+              {subtitleParts.join(' • ')}
+            </p>
+          )}
         </div>
 
         {/* Filter Pills */}
@@ -407,17 +426,19 @@ export default function PlotViewer({
           }}
         >
           <div className="plot-viewer__map-layers">
-            {/* 1. Background Layout Map Image */}
-            <img
-              src={backgroundUrl}
-              alt="Real Estate Layout Map"
-              className="plot-viewer__bg-image"
-              draggable={false}
-            />
+            {/* 1. Background Layout Map Image / Blueprint */}
+            {activeBackgroundUrl && (
+              <img
+                src={activeBackgroundUrl}
+                alt={layoutTitle}
+                className="plot-viewer__bg-image"
+                draggable={false}
+              />
+            )}
 
             {/* 2. Interactive SVG Overlay Element (Dynamically fetched from DB) */}
             <svg
-              viewBox={viewBox}
+              viewBox={activeViewBox}
               className="plot-viewer__overlay-svg"
               aria-label="Interactive Plot Overlay"
             >
@@ -572,7 +593,9 @@ export default function PlotViewer({
               <span className="pv-tooltip__label">Facing:</span>
               <span className="pv-tooltip__val">{hoveredPlot.facing}</span>
               <span className="pv-tooltip__label">Dimensions:</span>
-              <span className="pv-tooltip__val">{hoveredPlot.width} × {hoveredPlot.length}</span>
+              <span className="pv-tooltip__val">
+                {hoveredPlot.dimensions || `${hoveredPlot.width || ''} × ${hoveredPlot.length || ''}`}
+              </span>
               <span className="pv-tooltip__label">Area:</span>
               <span className="pv-tooltip__val">{hoveredPlot.area}</span>
             </div>
@@ -621,7 +644,9 @@ export default function PlotViewer({
               </div>
               <div className="pv-tiny-card__spec">
                 <span className="pv-tiny-card__label">Size</span>
-                <strong className="pv-tiny-card__val">{selectedPlot.width} × {selectedPlot.length}</strong>
+                <strong className="pv-tiny-card__val">
+                  {selectedPlot.dimensions || `${selectedPlot.width || ''} × ${selectedPlot.length || ''}`}
+                </strong>
               </div>
               {selectedPlot.price && (
                 <div className="pv-tiny-card__spec">

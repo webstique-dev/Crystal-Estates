@@ -63,7 +63,7 @@ export default function HeroSection({
         muted
         playsInline
         preload="auto"
-        poster="/images/vedanthangal.jpg"
+        poster="/images/hero-estate.jpg"
         className="hero-ref__video"
         aria-hidden="true"
         suppressHydrationWarning

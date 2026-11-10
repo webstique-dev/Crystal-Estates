@@ -136,34 +136,142 @@ app.use('/api/plots', plotsRouter)
 app.use('/api/leads', leadsRouter)
 app.use('/api/auth', authRouter)
 
-// Direct website enquiry endpoint saving into leads collection
+// Direct website enquiry endpoint saving into leads collection under "new" stage
 app.post('/api/enquiry', async (req, res) => {
   try {
-    const { name, phone, email, interest, message } = req.body
+    const body = req.body || {}
+    const name = (body.name || body.ownerName || '').trim()
+    const phone = (body.phone || '').trim()
+    const email = (body.email || '').trim()
+
     if (!name || !phone) {
-      return res.status(400).json({ success: false, error: 'Name and phone are required' })
+      return res.status(400).json({ success: false, error: 'Name and phone number are required' })
     }
+
     const db = await getDb()
     const id = `lead-${Date.now()}`
+
+    // Resolve property / interest name
+    let propertyName = (body.property || body.interest || '').trim()
+    if (!propertyName) {
+      if (body.landType) {
+        propertyName = `Land Sale: ${body.landType}`
+      } else {
+        propertyName = 'General Enquiry'
+      }
+    }
+
+    // Resolve source
+    const leadSource = body.source || 'Website'
+
+    // Resolve notes / extra details
+    const extraDetails = []
+    if (body.location) extraDetails.push(`Location: ${body.location}`)
+    if (body.landType) extraDetails.push(`Land Type: ${body.landType}`)
+    if (body.extent) extraDetails.push(`Size/Extent: ${body.extent}`)
+    if (body.expectedPrice) extraDetails.push(`Expected Price: ${body.expectedPrice}`)
+    if (body.datePreference) extraDetails.push(`Preferred Date: ${body.datePreference}`)
+
+    let finalNotes = (body.notes || body.message || '').trim()
+    if (extraDetails.length > 0) {
+      finalNotes = finalNotes
+        ? `${extraDetails.join(' | ')}\nNote: ${finalNotes}`
+        : extraDetails.join(' | ')
+    }
+    if (!finalNotes) {
+      finalNotes = `Submitted via ${leadSource}`
+    }
+
+    // Resolve requirement
+    const requirement =
+      body.requirement ||
+      body.landType ||
+      (propertyName.toLowerCase().includes('residence') || propertyName.toLowerCase().includes('apartment')
+        ? '3 BHK'
+        : 'Plot / Land')
+
+    // Resolve follow-up date
+    const followUpDate = body.followUpDate || body.datePreference || 'Today'
+
+    // Timestamp formatting
+    const createdDate = new Date()
+    const createdDayStr = createdDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    const createdTimeStr = createdDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).toLowerCase()
+    const timeFormatted = `${createdDayStr} · ${createdTimeStr}`
+
+    // Upcoming follow-up item
+    const upcomingFollowUps = [
+      {
+        id: `fu-${id}`,
+        type: 'Call',
+        title: `Follow-up on website enquiry from ${name}`,
+        when: followUpDate === 'Today' ? 'Today, 5:00 pm' : `${followUpDate}, 11:00 am`,
+        completed: false,
+        createdAt: createdDate,
+      },
+    ]
+
+    // Activity timeline items
+    const activities = [
+      {
+        id: `act-1-${Date.now()}`,
+        text: `Enquiry received from ${leadSource} for ${propertyName}`,
+        time: timeFormatted,
+        createdAt: createdDate,
+      },
+    ]
+
+    if (body.message || body.notes || extraDetails.length > 0) {
+      activities.push({
+        id: `act-2-${Date.now()}`,
+        text: `Details: ${finalNotes}`,
+        time: timeFormatted,
+        createdAt: createdDate,
+      })
+    }
+
     const newLead = {
       id,
-      name: name.trim(),
-      phone: (phone || '').trim(),
-      email: (email || '').trim(),
-      property: (interest || 'General Enquiry').trim(),
-      stage: 'new',
-      source: 'Website',
-      budget: 0,
-      budgetFormatted: 'TBD',
-      assignedAgent: { name: 'Arun Kumar', initials: 'AK', color: '#DC2626' },
-      followUpDate: 'Today',
+      name,
+      phone,
+      email,
+      property: propertyName,
+      propertyId: body.propertyId || null,
+      stage: 'new', // Always ensure it lands in "New leads"
+      source: leadSource,
+      budget: Number(body.budget) || 0,
+      budgetFormatted: body.budgetFormatted || body.expectedPrice || 'TBD',
+      assignedAgent: body.assignedAgent || {
+        name: 'Arun Kumar',
+        initials: 'AK',
+        color: '#DC2626',
+      },
+      requirement,
+      unit: body.unit || 'Not allotted',
+      followUpDate,
       advanceReceived: null,
-      notes: message || 'Submitted via website enquiry form',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      notes: finalNotes,
+      upcomingFollowUps,
+      activity: activities,
+      payments: [],
+      createdAt: createdDate,
+      updatedAt: createdDate,
     }
+
     await db.collection('leads').insertOne(newLead)
-    return res.status(201).json({ success: true, lead: newLead })
+
+    // Exclude Mongo _id from response
+    const { _id, ...savedLead } = newLead
+
+    return res.status(201).json({
+      success: true,
+      message: 'Enquiry saved successfully as New Lead in CRM',
+      lead: savedLead,
+    })
   } catch (err) {
     console.error('Error saving website enquiry:', err.message)
     return res.status(500).json({ success: false, error: err.message })

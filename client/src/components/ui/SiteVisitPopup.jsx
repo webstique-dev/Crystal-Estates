@@ -10,17 +10,14 @@ import {
   Send,
 } from 'lucide-react'
 import { WhatsAppIcon } from './index'
-import { business, projects } from '../../data/site'
+import { business } from '../../data/site'
 import './SiteVisitPopup.css'
-
-// Initial project list fallback
-const availableProjects = projects.filter((p) => p.status !== 'Sold Out')
 
 export default function SiteVisitPopup() {
   const [isVisible, setIsVisible] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [formSubmitted, setFormSubmitted] = useState(false)
-  const [projectList, setProjectList] = useState(availableProjects)
+  const [projectList, setProjectList] = useState([])
 
   // Fetch real projects dynamically
   useEffect(() => {
@@ -31,17 +28,18 @@ export default function SiteVisitPopup() {
           const avail = data.plots.filter((p) => p.status !== 'Sold Out' && p.status !== 'Sold')
           if (avail.length > 0) {
             setProjectList(avail)
+            setFormData((prev) => ({ ...prev, project: prev.project || avail[0].name }))
           }
         }
       })
       .catch(() => {})
   }, [])
 
-  // Form State: defaults to the first available (active) project
+  // Form State
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    project: availableProjects[0]?.name || 'Kolapakkam',
+    project: '',
     datePreference: 'This Saturday',
   })
 
@@ -82,9 +80,34 @@ export default function SiteVisitPopup() {
   }, [])
 
   // 5. Handle Form Submit
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault()
     setFormSubmitted(true)
+
+    // Save automatically to database under New Leads in CRM
+    try {
+      const payload = {
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        property: formData.project || 'General Site Visit',
+        interest: formData.project || 'General Site Visit',
+        datePreference: formData.datePreference || 'This Saturday',
+        followUpDate: formData.datePreference || 'This Saturday',
+        source: 'Website - Site Visit Popup',
+        stage: 'new',
+        notes: `Requested guided site visit for ${formData.project || 'property'} on ${formData.datePreference}`,
+      }
+
+      await fetch('/api/enquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch((err) => {
+        console.warn('Site visit enquiry POST failed:', err)
+      })
+    } catch (err) {
+      console.warn('Site visit enquiry error:', err)
+    }
 
     const msg = `*New Site Visit Request (Crystal Estates)*\n\n👤 *Name:* ${formData.name}\n📞 *Phone:* ${formData.phone}\n📍 *Project:* ${formData.project}\n📅 *Preferred Day:* ${formData.datePreference}\n\nPlease confirm our appointment and share the site location pin.`
 
