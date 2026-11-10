@@ -21,8 +21,15 @@ import {
   Building2,
   ExternalLink,
 } from 'lucide-react'
-import { convertPdfToSvg, readSvgFile } from '../../lib/pdfToSvg'
-import { uploadPlotImage, uploadLayoutSvg, uploadDocument, uploadVideo, createPlot, updatePlot } from '../../lib/api'
+import {
+  uploadPlotImage,
+  uploadLayoutFile,
+  uploadLayoutSvg,
+  uploadDocument,
+  uploadVideo,
+  createPlot,
+  updatePlot,
+} from '../../lib/api'
 
 function generateProjectId() {
   const randomNum = Math.floor(100000 + Math.random() * 900000)
@@ -92,11 +99,11 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
   const [newDocList, setNewDocList] = useState([])
   const documentInputRef = useRef(null)
 
-  // Layout Blueprint PDF / SVG State
-  const [existingLayoutUrl, setExistingLayoutUrl] = useState(initialData?.layoutBackgroundUrl || null)
+  // Layout Blueprint State (Accepts all formats directly without conversion)
+  const [existingLayoutUrl, setExistingLayoutUrl] = useState(
+    initialData?.layoutBackgroundUrl || initialData?.layoutUrl || null
+  )
   const [layoutFile, setLayoutFile] = useState(null)
-  const [isConvertingPdf, setIsConvertingPdf] = useState(false)
-  const [convertedSvg, setConvertedSvg] = useState(null)
   const layoutInputRef = useRef(null)
 
   // Videos State
@@ -215,42 +222,17 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
     setVideoList((prev) => prev.filter((_, i) => i !== idx))
   }
 
-  // Layout Blueprint Selection & Conversion
-  const handleLayoutFileSelect = async (e) => {
+  // Layout Blueprint Selection (Accepts all formats directly, no conversion)
+  const handleLayoutFileSelect = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     setError(null)
     setLayoutFile(file)
-
-    const isPdf = file.name.toLowerCase().endsWith('.pdf')
-    const isSvg = file.name.toLowerCase().endsWith('.svg')
-
-    if (!isPdf && !isSvg) {
-      setError('Please select a valid .pdf or .svg file for the plot layout.')
-      return
-    }
-
-    try {
-      if (isPdf) {
-        setIsConvertingPdf(true)
-        const result = await convertPdfToSvg(file, 2.0)
-        setConvertedSvg(result)
-        setIsConvertingPdf(false)
-      } else {
-        const result = await readSvgFile(file)
-        setConvertedSvg(result)
-      }
-    } catch (err) {
-      console.error('PDF/SVG conversion error:', err)
-      setError(`Failed to convert file: ${err.message}`)
-      setIsConvertingPdf(false)
-    }
   }
 
   const handleClearLayout = () => {
     setLayoutFile(null)
-    setConvertedSvg(null)
     setExistingLayoutUrl(null)
     if (layoutInputRef.current) layoutInputRef.current.value = ''
   }
@@ -310,28 +292,19 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
         }
       }
 
-      // 4. Upload Converted Layout SVG (if provided)
+      // 4. Upload Layout Blueprint File (Direct upload of any format, no conversion)
       let layoutBackgroundUrl = existingLayoutUrl
+      let layoutUrl = initialData?.layoutUrl || existingLayoutUrl || null
       let layoutSlug = initialData?.layoutSlug || null
+      let layoutFileName = initialData?.layoutFileName || null
 
-      if (convertedSvg) {
-        const customSlug = formData.name
-          .toLowerCase()
-          .replace(/[^a-z0-9_-]/g, '-')
-          .replace(/-+/g, '-')
-
-        const uploadSvgRes = await uploadLayoutSvg({
-          svgContent: convertedSvg.svgString,
-          layoutSlug: customSlug || convertedSvg.slug,
-          projectName: formData.name,
-          viewBox: convertedSvg.viewBox,
-          width: convertedSvg.width,
-          height: convertedSvg.height,
-        })
-
-        if (uploadSvgRes.success) {
-          layoutBackgroundUrl = uploadSvgRes.layoutBackgroundUrl
-          layoutSlug = uploadSvgRes.slug
+      if (layoutFile) {
+        const uploadRes = await uploadLayoutFile(layoutFile, formData.name)
+        if (uploadRes.success) {
+          layoutBackgroundUrl = uploadRes.url
+          layoutUrl = uploadRes.url
+          layoutSlug = uploadRes.slug || null
+          layoutFileName = uploadRes.name || layoutFile.name
         }
       }
 
@@ -384,9 +357,15 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
         mapLocation: (formData.mapLocation || '').trim(),
         mapUrl: (formData.mapLocation || '').trim(),
         googleMapsUrl: (formData.mapLocation || '').trim(),
-        hasLayoutMap: Boolean(layoutBackgroundUrl),
+        hasLayoutMap: Boolean(layoutBackgroundUrl || layoutUrl),
         layoutSlug,
         layoutBackgroundUrl,
+        layoutUrl,
+        layoutFileName,
+        layoutImage:
+          layoutBackgroundUrl && /\.(png|jpe?g|webp|gif|svg)$/i.test(layoutBackgroundUrl)
+            ? layoutBackgroundUrl
+            : initialData?.layoutImage || null,
       }
 
       let savedResult
@@ -1049,17 +1028,15 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
                   <FileCode2 className="w-4 h-4 text-[#0B57D0]" />
                   <span>13. Layout Blueprint & Documents</span>
                 </div>
-                <span className="text-[11px] text-blue-600 font-semibold">
-                  PDF ➔ SVG Vector Pipeline
-                </span>
+                
               </div>
 
               {/* Blueprint Upload */}
               <div className="space-y-2">
                 <span className="text-[11px] font-semibold text-slate-600 block">
-                  Plot Blueprint (Auto converts to interactive SVG layout map):
+                  Plot Blueprint / Layout File:
                 </span>
-                {!convertedSvg && !existingLayoutUrl ? (
+                {!layoutFile && !existingLayoutUrl ? (
                   <div
                     onClick={() => layoutInputRef.current?.click()}
                     className="border border-dashed border-blue-300 hover:border-blue-500 rounded-xl p-4 text-center cursor-pointer bg-white transition"
@@ -1067,21 +1044,13 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
                     <input
                       ref={layoutInputRef}
                       type="file"
-                      accept=".pdf,.svg"
                       onChange={handleLayoutFileSelect}
                       className="hidden"
                     />
-                    {isConvertingPdf ? (
-                      <div className="flex flex-col items-center gap-1.5 py-2">
-                        <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                        <span className="text-xs font-bold text-blue-700">Converting CAD/PDF to SVG...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center gap-2 text-xs font-semibold text-blue-700">
-                        <Upload className="w-4 h-4" />
-                        <span>Select Layout PDF or SVG File</span>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-center gap-2 text-xs font-semibold text-blue-700">
+                      <Upload className="w-4 h-4" />
+                      <span>Select Layout Blueprint File</span>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
@@ -1090,6 +1059,11 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
                       <span className="truncate">
                         {layoutFile?.name || existingLayoutUrl}
                       </span>
+                      {layoutFile?.size && (
+                        <span className="text-[11px] text-emerald-600 font-normal">
+                          ({(layoutFile.size / 1024).toFixed(1)} KB)
+                        </span>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -1114,13 +1088,12 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
                     className="px-3.5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-2 shadow-2xs"
                   >
                     <FileText className="w-3.5 h-3.5" />
-                    <span>Attach Documents (PDF/DOC)</span>
+                    <span>Attach Documents</span>
                   </button>
                   <input
                     ref={documentInputRef}
                     type="file"
                     multiple
-                    accept=".pdf,.doc,.docx"
                     onChange={handleDocumentSelect}
                     className="hidden"
                   />

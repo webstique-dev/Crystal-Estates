@@ -68,6 +68,29 @@ export async function uploadVideo(file) {
 }
 
 /**
+ * Upload layout blueprint file of any format (PDF, CAD, SVG, image, doc) directly without conversion
+ */
+export async function uploadLayoutFile(file, projectName = '') {
+  const formData = new FormData()
+  formData.append('layoutFile', file)
+  if (projectName) {
+    formData.append('projectName', projectName)
+  }
+
+  const res = await fetch(getApiUrl('/api/upload/layout-file'), {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Layout file upload failed: HTTP ${res.status}`)
+  }
+
+  return await res.json()
+}
+
+/**
  * Upload converted SVG layout to backend
  */
 export async function uploadLayoutSvg({ svgContent, layoutSlug, projectName, viewBox, width, height }) {

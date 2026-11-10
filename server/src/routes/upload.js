@@ -223,6 +223,89 @@ router.post('/video', upload.single('video'), async (req, res) => {
 })
 
 /**
+ * POST /api/upload/layout-file
+ * Accepts any layout blueprint file format (PDF, CAD DWG/DXF, SVG, PNG, JPG, DOC, etc.)
+ * Saves directly without any conversion.
+ */
+router.post('/layout-file', upload.single('layoutFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No layout file provided' })
+    }
+
+    const buffer = req.file.buffer
+    const originalName = req.file.originalname
+    const ext = path.extname(originalName).toLowerCase() || '.pdf'
+    const timestamp = Date.now()
+    const safeBase = sanitizeSlug(path.basename(originalName, ext))
+    const projectName = req.body.projectName || safeBase
+    const filename = `layout-${safeBase}-${timestamp}${ext}`
+
+    saveToDirs(
+      [clientPlotsDir, crmPlotsDir, serverUploadsPlotsDir, clientDocumentsDir, crmDocumentsDir],
+      filename,
+      buffer
+    )
+
+    const publicUrl = `/plots/${filename}`
+    const isSvg = ext === '.svg'
+
+    let viewBox = '0 0 1056 816'
+    let width = 1056
+    let height = 816
+
+    if (isSvg) {
+      try {
+        const svgContent = buffer.toString('utf-8')
+        const dims = extractSvgDimensions(svgContent)
+        viewBox = dims.viewBox
+        width = dims.width
+        height = dims.height
+
+        const db = await getDb()
+        await db.collection('layout_metadata').updateOne(
+          { slug: safeBase },
+          {
+            $set: {
+              slug: safeBase,
+              name: projectName,
+              layoutBackgroundUrl: publicUrl,
+              viewBox,
+              width,
+              height,
+              updatedAt: new Date(),
+            },
+            $setOnInsert: {
+              createdAt: new Date(),
+            },
+          },
+          { upsert: true }
+        )
+      } catch (svgErr) {
+        console.warn('SVG layout metadata extraction warning:', svgErr.message)
+      }
+    }
+
+    return res.json({
+      success: true,
+      url: publicUrl,
+      filename,
+      name: originalName,
+      slug: safeBase,
+      size: buffer.length,
+      sizeFormatted: `${(buffer.length / 1024).toFixed(1)} KB`,
+      isSvg,
+      viewBox,
+      width,
+      height,
+    })
+  } catch (err) {
+    console.error('Layout file upload error:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+/**
  * POST /api/upload/layout-svg
  * Accepts converted SVG content string (e.g. from PDF conversion) and saves as
  * client/public/plots/<slug>-layout.svg like kolapakkam-layout.svg

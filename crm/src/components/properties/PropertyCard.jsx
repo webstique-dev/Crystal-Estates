@@ -39,10 +39,15 @@ export default function PropertyCard({ property, onEdit, onDelete }) {
   const bookedPct = total > 0 ? Math.round((booked / total) * 100) : 0
   const soldPct = total > 0 ? Math.max(0, 100 - availPct - bookedPct) : 0
 
-  const hasLayout = Boolean(property.layoutBackgroundUrl || property.hasLayoutMap)
-  const layoutSlug =
-    property.layoutSlug ||
-    (property.name ? property.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'kolapakkam')
+  const hasLayout = Boolean(property.layoutBackgroundUrl || property.hasLayoutMap || property.layoutUrl)
+  const isSvgLayout = Boolean(
+    (property.layoutBackgroundUrl && property.layoutBackgroundUrl.endsWith('.svg')) ||
+    property.layoutSlug
+  )
+  const fallbackSlug = property.name ? property.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'kolapakkam'
+  const targetLayoutLink = isSvgLayout
+    ? `http://localhost:3000/layout-viewer?layout=${property.layoutSlug || fallbackSlug}`
+    : property.layoutBackgroundUrl || property.layoutUrl
 
   const hasDocs = Boolean(property.documents && property.documents.length > 0)
   const hasVideos = Boolean(property.videos && property.videos.length > 0)
@@ -90,11 +95,11 @@ export default function PropertyCard({ property, onEdit, onDelete }) {
         <div className="absolute top-3.5 right-3.5 z-10 flex items-center gap-1.5">
           {hasLayout && (
             <a
-              href={`http://localhost:3000/layout-viewer?layout=${layoutSlug}`}
+              href={targetLayoutLink}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0B57D0]/90 hover:bg-[#0B57D0] text-white text-[10px] font-bold shadow-md backdrop-blur-md transition"
-              title="Open Interactive Layout Blueprint"
+              title="Open Layout Blueprint"
             >
               <FileCode2 className="w-3.5 h-3.5" />
               <span>Map</span>
@@ -245,11 +250,11 @@ export default function PropertyCard({ property, onEdit, onDelete }) {
           <div className="flex items-center gap-2.5 shrink-0">
             {hasLayout && (
               <a
-                href={`http://localhost:3000/layout-viewer?layout=${layoutSlug}`}
+                href={targetLayoutLink}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0B57D0] hover:underline"
-                title="Open Interactive Layout Plan"
+                title="Open Layout Plan"
               >
                 <FileCode2 className="w-3.5 h-3.5" />
                 <span>Layout</span>
