@@ -89,11 +89,13 @@ app.use((req, res, next) => {
   next()
 })
 
-// Serve static layout SVGs, plot images, documents and videos
-app.use('/plots', express.static(path.join(rootDir, 'client/public/plots')))
-app.use('/images', express.static(path.join(rootDir, 'client/public/images')))
-app.use('/documents', express.static(path.join(rootDir, 'client/public/documents')))
-app.use('/videos', express.static(path.join(rootDir, 'client/public/videos')))
+// Serve static layout SVGs, plot images, documents and videos (checks server/uploads first, falls back to client/public)
+const uploadsDir = path.join(__dirname, '../uploads')
+app.use('/plots', express.static(path.join(uploadsDir, 'plots')), express.static(path.join(rootDir, 'client/public/plots')))
+app.use('/images', express.static(path.join(uploadsDir, 'images')), express.static(path.join(rootDir, 'client/public/images')))
+app.use('/documents', express.static(path.join(uploadsDir, 'documents')), express.static(path.join(rootDir, 'client/public/documents')))
+app.use('/videos', express.static(path.join(uploadsDir, 'videos')), express.static(path.join(rootDir, 'client/public/videos')))
+app.use('/uploads', express.static(uploadsDir))
 
 // Root & Health check
 app.get('/', (req, res) => {
