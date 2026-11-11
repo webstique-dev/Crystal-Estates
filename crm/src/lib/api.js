@@ -8,6 +8,26 @@ export function getApiUrl(path) {
 }
 
 /**
+ * Resolve client website URL (Next.js frontend)
+ * Reads VITE_CLIENT_URL / VITE_WEBSITE_URL, or defaults to production Vercel frontend or localhost:3000
+ */
+export function getClientUrl(path = '') {
+  let base = (import.meta.env.VITE_CLIENT_URL || import.meta.env.VITE_WEBSITE_URL || '').replace(/\/$/, '')
+  if (!base) {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      // If deployed on Vercel without VITE_CLIENT_URL, derive default web frontend domain by stripping -crm
+      // e.g. https://crystal-estates-crm.vercel.app -> https://crystal-estates.vercel.app
+      base = window.location.origin.replace(/-crm(?=\.|$)/, '')
+    } else {
+      base = 'http://localhost:3000'
+    }
+  }
+  if (!path) return base
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  return `${base}${cleanPath}`
+}
+
+/**
  * Upload single image to backend
  */
 export async function uploadPlotImage(file) {

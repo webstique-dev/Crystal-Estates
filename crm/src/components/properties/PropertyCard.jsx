@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { MapPin, Trash2, Edit2, FileCode2, ImageOff, Video, FileText, Layers } from 'lucide-react'
+import { getClientUrl } from '../../lib/api'
 
 // Status badge styling for properties
 const STATUS_STYLES = {
@@ -45,9 +46,14 @@ export default function PropertyCard({ property, onEdit, onDelete }) {
     property.layoutSlug
   )
   const fallbackSlug = property.name ? property.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : (property.id || '')
-  const targetLayoutLink = isSvgLayout
-    ? `http://localhost:3000/layout-viewer?slug=${property.layoutSlug || fallbackSlug}`
+  const layoutSlug = property.layoutSlug || property.slug || property.projectId || property.id || fallbackSlug
+  const targetLayoutLink = isSvgLayout || property.layoutSlug
+    ? getClientUrl(`/layout-viewer?slug=${encodeURIComponent(layoutSlug)}`)
     : property.layoutBackgroundUrl || property.layoutUrl
+      ? (property.layoutBackgroundUrl || property.layoutUrl).startsWith('http')
+        ? (property.layoutBackgroundUrl || property.layoutUrl)
+        : getClientUrl(property.layoutBackgroundUrl || property.layoutUrl)
+      : '#'
 
   const hasDocs = Boolean(property.documents && property.documents.length > 0)
   const hasVideos = Boolean(property.videos && property.videos.length > 0)
