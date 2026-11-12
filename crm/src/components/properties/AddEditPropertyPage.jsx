@@ -20,6 +20,8 @@ import {
   Check,
   Building2,
   ExternalLink,
+  Plus,
+  X,
 } from 'lucide-react'
 import {
   uploadPlotImage,
@@ -101,26 +103,92 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
   const [newDocList, setNewDocList] = useState([])
   const documentInputRef = useRef(null)
 
-  // Layout Blueprint State (Accepts all formats directly without conversion)
-  const [existingLayoutUrl, setExistingLayoutUrl] = useState(
-    initialData?.layoutBackgroundUrl || initialData?.layoutUrl || null
-  )
-  const [layoutFile, setLayoutFile] = useState(null)
+  // Layout Blueprint Phases State (Supports 1 or more named layout blueprints e.g. Phase 1, Phase 2)
+  const [phases, setPhases] = useState(() => {
+    if (Array.isArray(initialData?.layouts) && initialData.layouts.length > 0) {
+      return initialData.layouts.map((l, idx) => ({
+        id: l.id || `phase-${idx + 1}`,
+        name: l.name || `Phase ${idx + 1}`,
+        existingLayoutUrl: l.layoutUrl || l.layoutBackgroundUrl || null,
+        layoutFile: null,
+        plots: Array.isArray(l.plots) ? l.plots : [],
+        viewBox: l.viewBox || null,
+        width: l.width || null,
+        height: l.height || null,
+      }))
+    }
+    return [
+      {
+        id: 'phase-1',
+        name: 'Phase 1',
+        existingLayoutUrl: initialData?.layoutBackgroundUrl || initialData?.layoutUrl || null,
+        layoutFile: null,
+        plots: Array.isArray(initialData?.plots) ? initialData.plots : [],
+        viewBox: initialData?.viewBox || null,
+        width: initialData?.width || null,
+        height: initialData?.height || null,
+      },
+    ]
+  })
+  const [activePhaseIndex, setActivePhaseIndex] = useState(0)
   const layoutInputRef = useRef(null)
 
-  // Layout Plots & Path Data State
-  const [layoutPlots, setLayoutPlots] = useState(
-    Array.isArray(initialData?.plots) ? initialData.plots : []
-  )
-
-  // Load existing layout plots from database if editing a property
+  // Load existing layout plots and phases from database if editing a property
   useEffect(() => {
-    const slug = initialData?.layoutSlug || initialData?.slug || initialData?.id
-    if (slug && (!initialData?.plots || initialData.plots.length === 0)) {
+    if (!initialData) return
+
+    // 1. Immediately sync phases from initialData if available
+    const rawLayouts =
+      Array.isArray(initialData.layouts) && initialData.layouts.length > 0
+        ? initialData.layouts
+        : Array.isArray(initialData.phases) && initialData.phases.length > 0
+        ? initialData.phases
+        : null
+
+    if (rawLayouts) {
+      setPhases(
+        rawLayouts.map((l, idx) => ({
+          id: l.id || `phase-${idx + 1}`,
+          name: l.name || `Phase ${idx + 1}`,
+          existingLayoutUrl: l.layoutUrl || l.layoutBackgroundUrl || null,
+          layoutFile: null,
+          plots: Array.isArray(l.plots) ? l.plots : [],
+          viewBox: l.viewBox || null,
+          width: l.width || null,
+          height: l.height || null,
+        }))
+      )
+    }
+
+    // 2. Fetch fresh layout details from backend
+    const slug = initialData.layoutSlug || initialData.slug || initialData.id
+    if (slug) {
       fetchLayoutDetails(slug)
         .then((data) => {
-          if (data.success && Array.isArray(data.plots) && data.plots.length > 0) {
-            setLayoutPlots(data.plots)
+          if (data && data.success) {
+            if (Array.isArray(data.layouts) && data.layouts.length > 0) {
+              setPhases(
+                data.layouts.map((l, idx) => ({
+                  id: l.id || `phase-${idx + 1}`,
+                  name: l.name || `Phase ${idx + 1}`,
+                  existingLayoutUrl: l.layoutUrl || l.layoutBackgroundUrl || null,
+                  layoutFile: null,
+                  plots: Array.isArray(l.plots) ? l.plots : [],
+                  viewBox: l.viewBox || null,
+                  width: l.width || null,
+                  height: l.height || null,
+                }))
+              )
+            } else if (Array.isArray(data.plots) && data.plots.length > 0 && !rawLayouts) {
+              setPhases((prev) => {
+                const next = [...prev]
+                if (next.length > 0 && (!next[0].plots || next[0].plots.length === 0)) {
+                  next[0] = { ...next[0], plots: data.plots }
+                  return next
+                }
+                return prev
+              })
+            }
           }
         })
         .catch(() => {})
@@ -243,19 +311,88 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
     setVideoList((prev) => prev.filter((_, i) => i !== idx))
   }
 
-  // Layout Blueprint Selection (Accepts all formats directly, no conversion)
-  const handleLayoutFileSelect = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // Phase Management Handlers
+  const currentPhase = phases[activePhaseIndex] || phases[0] || {}
 
-    setError(null)
-    setLayoutFile(file)
+  const handleAddPhase = () => {
+    const nextNum = phases.length + 1
+    const newPhase = {
+      id: `phase-${Date.now()}`,
+      name: `Phase ${nextNum}`,
+      existingLayoutUrl: null,
+      layoutFile: null,
+      plots: [],
+      viewBox: null,
+      width: null,
+      height: null,
+    }
+    setPhases((prev) => [...prev, newPhase])
+    setActivePhaseIndex(phases.length)
   }
 
-  const handleClearLayout = () => {
-    setLayoutFile(null)
-    setExistingLayoutUrl(null)
+  const handleRemovePhase = (indexToRemove) => {
+    if (phases.length <= 1) return
+    const target = phases[indexToRemove]
+    const pName = target?.name || `Phase ${indexToRemove + 1}`
+    if (window.confirm(`Are you sure you want to remove ${pName}? Any plots and layout file for this phase will be removed.`)) {
+      setPhases((prev) => prev.filter((_, idx) => idx !== indexToRemove))
+      setActivePhaseIndex((prev) => (prev >= indexToRemove ? Math.max(0, prev - 1) : prev))
+    }
+  }
+
+  const handleUpdatePhaseName = (name) => {
+    setPhases((prev) => {
+      const next = [...prev]
+      if (next[activePhaseIndex]) {
+        next[activePhaseIndex] = { ...next[activePhaseIndex], name }
+      }
+      return next
+    })
+  }
+
+  const handlePhaseLayoutFileSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError(null)
+    setPhases((prev) => {
+      const next = [...prev]
+      if (next[activePhaseIndex]) {
+        next[activePhaseIndex] = {
+          ...next[activePhaseIndex],
+          layoutFile: file,
+        }
+      }
+      return next
+    })
+    e.target.value = ''
+  }
+
+  const handleClearPhaseLayout = () => {
+    setPhases((prev) => {
+      const next = [...prev]
+      if (next[activePhaseIndex]) {
+        next[activePhaseIndex] = {
+          ...next[activePhaseIndex],
+          layoutFile: null,
+          existingLayoutUrl: null,
+        }
+      }
+      return next
+    })
     if (layoutInputRef.current) layoutInputRef.current.value = ''
+  }
+
+  const handlePhasePlotsChange = (updatedPlots) => {
+    setPhases((prev) => {
+      const next = [...prev]
+      if (next[activePhaseIndex]) {
+        next[activePhaseIndex] = {
+          ...next[activePhaseIndex],
+          plots: updatedPlots,
+        }
+      }
+      return next
+    })
   }
 
   // Submit Handler
@@ -313,21 +450,59 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
         }
       }
 
-      // 4. Upload Layout Blueprint File (Direct upload of any format, no conversion)
-      let layoutBackgroundUrl = existingLayoutUrl
-      let layoutUrl = initialData?.layoutUrl || existingLayoutUrl || null
-      let layoutSlug = initialData?.layoutSlug || null
-      let layoutFileName = initialData?.layoutFileName || null
+      // 4. Upload Layout Blueprint Files for each Phase
+      const processedPhases = []
+      for (let i = 0; i < phases.length; i++) {
+        const phase = phases[i]
+        let pLayoutUrl = phase.existingLayoutUrl || null
+        let pViewBox = phase.viewBox || null
+        let pWidth = phase.width || null
+        let pHeight = phase.height || null
 
-      if (layoutFile) {
-        const uploadRes = await uploadLayoutFile(layoutFile, formData.name)
-        if (uploadRes.success) {
-          layoutBackgroundUrl = uploadRes.url
-          layoutUrl = uploadRes.url
-          layoutSlug = uploadRes.slug || null
-          layoutFileName = uploadRes.name || layoutFile.name
+        if (phase.layoutFile) {
+          const uploadRes = await uploadLayoutFile(
+            phase.layoutFile,
+            `${formData.name} - ${phase.name || `Phase ${i + 1}`}`
+          )
+          if (uploadRes.success) {
+            pLayoutUrl = uploadRes.url
+            pViewBox = uploadRes.viewBox || null
+            pWidth = uploadRes.width || null
+            pHeight = uploadRes.height || null
+          }
         }
+
+        const phaseName = (phase.name || `Phase ${i + 1}`).trim()
+        const phasePlots = (phase.plots || []).map((plot) => ({
+          ...plot,
+          phase: phaseName,
+        }))
+
+        processedPhases.push({
+          id: phase.id || `phase-${i + 1}`,
+          name: phaseName,
+          layoutUrl: pLayoutUrl,
+          layoutBackgroundUrl: pLayoutUrl,
+          viewBox: pViewBox,
+          width: pWidth,
+          height: pHeight,
+          plots: phasePlots,
+          totalPlots: phasePlots.length,
+          availablePlots: phasePlots.filter((p) => p.status === 'Available').length,
+        })
       }
+
+      // Combine all plots across all phases tagged with phase name
+      const allPlots = processedPhases.flatMap((p) => p.plots || [])
+
+      const primaryLayout = processedPhases[0] || null
+      const layoutBackgroundUrl = primaryLayout?.layoutUrl || null
+      const layoutUrl = primaryLayout?.layoutUrl || null
+      const layoutSlug = initialData?.layoutSlug || null
+      const layoutFileName = initialData?.layoutFileName || null
+      const layoutViewBox = primaryLayout?.viewBox || initialData?.viewBox || null
+      const layoutWidth = primaryLayout?.width || initialData?.width || null
+      const layoutHeight = primaryLayout?.height || initialData?.height || null
 
       // 5. Construct Final Property Payload without dummy numbers
       const finalLocation =
@@ -378,18 +553,25 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
         mapLocation: (formData.mapLocation || '').trim(),
         mapUrl: (formData.mapLocation || '').trim(),
         googleMapsUrl: (formData.mapLocation || '').trim(),
-        hasLayoutMap: Boolean(layoutBackgroundUrl || layoutUrl || layoutPlots.length > 0),
+        hasLayoutMap: Boolean(
+          processedPhases.some((p) => p.layoutUrl || (p.plots && p.plots.length > 0))
+        ),
         layoutSlug,
         layoutBackgroundUrl,
         layoutUrl,
         layoutFileName,
+        viewBox: layoutViewBox,
+        layoutWidth,
+        layoutHeight,
         layoutImage:
           layoutBackgroundUrl && /\.(png|jpe?g|webp|gif|svg)$/i.test(layoutBackgroundUrl)
             ? layoutBackgroundUrl
             : initialData?.layoutImage || null,
-        plots: layoutPlots,
-        totalPlots: layoutPlots.length,
-        availablePlots: layoutPlots.filter((p) => p.status === 'Available').length,
+        layouts: processedPhases,
+        phases: processedPhases,
+        plots: allPlots,
+        totalPlots: allPlots.length,
+        availablePlots: allPlots.filter((p) => p.status === 'Available').length,
       }
 
       let savedResult
@@ -1052,63 +1234,159 @@ export default function AddEditPropertyPage({ initialData, onSave, onCancel }) {
                   <FileCode2 className="w-4 h-4 text-[#0B57D0]" />
                   <span>13. Layout Blueprint & Documents</span>
                 </div>
-                
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {phases.length} {phases.length === 1 ? 'Phase' : 'Phases'} Configured
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleAddPhase}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-[#0B57D0] bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition"
+                    title="Add another plot layout phase (e.g. Phase 2)"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Phase / Layout</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Blueprint Upload */}
-              <div className="space-y-2">
-                <span className="text-[11px] font-semibold text-slate-600 block">
-                  Plot Blueprint / Layout File:
-                </span>
-                {!layoutFile && !existingLayoutUrl ? (
-                  <div
-                    onClick={() => layoutInputRef.current?.click()}
-                    className="border border-dashed border-blue-300 hover:border-blue-500 rounded-xl p-4 text-center cursor-pointer bg-white transition"
-                  >
-                    <input
-                      ref={layoutInputRef}
-                      type="file"
-                      onChange={handleLayoutFileSelect}
-                      className="hidden"
-                    />
-                    <div className="flex items-center justify-center gap-2 text-xs font-semibold text-blue-700">
-                      <Upload className="w-4 h-4" />
-                      <span>Select Layout Blueprint File</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
-                    <div className="flex items-center gap-2 text-emerald-800 font-semibold truncate">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span className="truncate">
-                        {layoutFile?.name || existingLayoutUrl}
+              {/* Phase Switcher Tabs (Phase-1, Phase-2, etc.) */}
+              <div className="flex items-center gap-2 flex-wrap pt-1 pb-2 border-b border-slate-200">
+                {phases.map((phase, idx) => {
+                  const isActive = idx === activePhaseIndex
+                  const plotCount = (phase.plots || []).length
+                  const hasFile = Boolean(phase.layoutFile || phase.existingLayoutUrl)
+
+                  return (
+                    <div
+                      key={phase.id || idx}
+                      onClick={() => setActivePhaseIndex(idx)}
+                      className={`group flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition border ${
+                        isActive
+                          ? 'bg-[#0B57D0] text-white border-[#0B57D0] shadow-sm'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          hasFile
+                            ? isActive
+                              ? 'bg-emerald-300'
+                              : 'bg-emerald-500'
+                            : isActive
+                            ? 'bg-white/40'
+                            : 'bg-slate-300'
+                        }`}
+                        title={hasFile ? 'Layout blueprint attached' : 'No blueprint file attached yet'}
+                      />
+                      <span>{phase.name || `Phase ${idx + 1}`}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                          isActive
+                            ? 'bg-white/20 text-white'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {plotCount} {plotCount === 1 ? 'Plot' : 'Plots'}
                       </span>
-                      {layoutFile?.size && (
-                        <span className="text-[11px] text-emerald-600 font-normal">
-                          ({(layoutFile.size / 1024).toFixed(1)} KB)
-                        </span>
+                      {phases.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRemovePhase(idx)
+                          }}
+                          className={`p-0.5 rounded transition ${
+                            isActive
+                              ? 'text-white/70 hover:text-white hover:bg-white/20'
+                              : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                          }`}
+                          title={`Remove ${phase.name || 'Phase'}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleClearLayout}
-                      className="text-rose-600 hover:text-rose-800 font-bold text-xs shrink-0 ml-2"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
+                  )
+                })}
               </div>
 
-              {/* Interactive Plots & Path Data (Available after uploading or updating layout) */}
-              {(layoutFile || existingLayoutUrl || layoutPlots.length > 0) && (
+              {/* Active Phase Details */}
+              <div className="space-y-4 pt-1">
+                {/* Phase Name Input */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 max-w-xs">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Phase / Layout Display Name:
+                    </label>
+                    <input
+                      type="text"
+                      value={currentPhase?.name || ''}
+                      onChange={(e) => handleUpdatePhaseName(e.target.value)}
+                      placeholder="e.g. Phase-1, Phase-2..."
+                      className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800"
+                    />
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-5">
+                    Displayed on website layout viewer tabs
+                  </span>
+                </div>
+
+                {/* Blueprint Upload */}
+                <div className="space-y-2">
+                  <span className="text-[11px] font-semibold text-slate-600 block">
+                    Plot Blueprint / Layout File for {currentPhase?.name || 'this Phase'}:
+                  </span>
+                  {!currentPhase?.layoutFile && !currentPhase?.existingLayoutUrl ? (
+                    <div
+                      onClick={() => layoutInputRef.current?.click()}
+                      className="border border-dashed border-blue-300 hover:border-blue-500 rounded-xl p-4 text-center cursor-pointer bg-white transition"
+                    >
+                      <input
+                        ref={layoutInputRef}
+                        type="file"
+                        onChange={handlePhaseLayoutFileSelect}
+                        className="hidden"
+                      />
+                      <div className="flex items-center justify-center gap-2 text-xs font-semibold text-blue-700">
+                        <Upload className="w-4 h-4" />
+                        <span>Select Blueprint File for {currentPhase?.name || 'Phase'}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1">SVG, PDF, PNG or CAD blueprint file</p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
+                      <div className="flex items-center gap-2 text-emerald-800 font-semibold truncate">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="truncate">
+                          {currentPhase?.layoutFile?.name || currentPhase?.existingLayoutUrl}
+                        </span>
+                        {currentPhase?.layoutFile?.size && (
+                          <span className="text-[11px] text-emerald-600 font-normal">
+                            ({(currentPhase.layoutFile.size / 1024).toFixed(1)} KB)
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleClearPhaseLayout}
+                        className="text-rose-600 hover:text-rose-800 font-bold text-xs shrink-0 ml-2"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Interactive Plots & Path Data for Current Phase */}
                 <PlotManagementSection
-                  plots={layoutPlots}
-                  onChange={setLayoutPlots}
-                  layoutUrl={existingLayoutUrl || (layoutFile ? layoutFile.name : null)}
-                  projectName={formData.name}
+                  key={currentPhase?.id || activePhaseIndex}
+                  plots={currentPhase?.plots || []}
+                  onChange={handlePhasePlotsChange}
+                  layoutUrl={currentPhase?.existingLayoutUrl || (currentPhase?.layoutFile ? currentPhase.layoutFile.name : null)}
+                  projectName={`${formData.name} - ${currentPhase?.name || 'Phase'}`}
                 />
-              )}
+              </div>
 
               {/* Legal Documents */}
               <div className="space-y-2 pt-3 border-t border-slate-200">

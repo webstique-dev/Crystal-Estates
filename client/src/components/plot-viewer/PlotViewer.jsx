@@ -28,23 +28,63 @@ export default function PlotViewer({
   backgroundUrl = null,
   viewBox = null,
   metadata = null,
+  phases = null,
+  activePhase = 0,
+  onPhaseChange = null,
   whatsappNumber = '919444000000',
   className = '',
   onPlotSelect = null,
   backHref = null,
 }) {
   // Data state loaded purely from API or passed props
-  const [plots, setPlots] = useState(initialPlots || [])
+  const [plots, setPlots] = useState(() => (Array.isArray(initialPlots) ? initialPlots : []))
   const [meta, setMeta] = useState(metadata || {})
-  const [loading, setLoading] = useState(Boolean(!initialPlots && fetchUrl))
+  const [loading, setLoading] = useState(Boolean(!Array.isArray(initialPlots) && fetchUrl))
   const [error, setError] = useState(null)
 
   useEffect(() => {
     if (metadata) setMeta(metadata)
   }, [metadata])
 
-  const activeBackgroundUrl = backgroundUrl || meta?.layoutBackgroundUrl || meta?.layoutUrl || null
-  const activeViewBox = viewBox || meta?.viewBox || '0 0 1056 816'
+  useEffect(() => {
+    if (Array.isArray(initialPlots)) {
+      setPlots(initialPlots)
+    }
+  }, [initialPlots])
+
+  // Multi-Phase Layout Support
+  const layoutPhases = React.useMemo(() => {
+    if (Array.isArray(phases) && phases.length > 0) return phases
+    if (Array.isArray(metadata?.layouts) && metadata.layouts.length > 0) return metadata.layouts
+    if (Array.isArray(metadata?.phases) && metadata.phases.length > 0) return metadata.phases
+    if (Array.isArray(meta?.layouts) && meta.layouts.length > 0) return meta.layouts
+    if (Array.isArray(meta?.phases) && meta.phases.length > 0) return meta.phases
+    return null
+  }, [phases, metadata, meta])
+
+  const [currentPhaseIdx, setCurrentPhaseIdx] = useState(activePhase || 0)
+
+  useEffect(() => {
+    if (typeof activePhase === 'number' && activePhase >= 0) {
+      setCurrentPhaseIdx(activePhase)
+    }
+  }, [activePhase])
+
+  const currentPhase = layoutPhases && layoutPhases[currentPhaseIdx] ? layoutPhases[currentPhaseIdx] : null
+
+  const activeBackgroundUrl =
+    currentPhase?.layoutUrl ||
+    currentPhase?.layoutBackgroundUrl ||
+    backgroundUrl ||
+    meta?.layoutBackgroundUrl ||
+    meta?.layoutUrl ||
+    null
+
+  const activeViewBox =
+    currentPhase?.viewBox ||
+    viewBox ||
+    meta?.viewBox ||
+    '0 0 1056 816'
 
   // Status Filter state: 'All' | 'Available' | 'Booked' | 'Sold' | 'Blocked'
   const [activeFilter, setActiveFilter] = useState('All')
@@ -71,9 +111,9 @@ export default function PlotViewer({
   // Touch pinch zoom state
   const touchDistRef = useRef(null)
 
-  // 1. Dynamic Data Fetching from Database API
+  // 1. Dynamic Data Fetching from Database API (only when initialPlots is not passed)
   useEffect(() => {
-    if (!fetchUrl) return
+    if (!fetchUrl || Array.isArray(initialPlots)) return
     let isMounted = true
 
     fetch(fetchUrl)
@@ -84,6 +124,13 @@ export default function PlotViewer({
       .then((data) => {
         if (isMounted) {
           if (data.metadata) setMeta(data.metadata)
+          if (data.layouts || data.phases) {
+            setMeta((prev) => ({
+              ...prev,
+              layouts: data.layouts || data.phases,
+              phases: data.layouts || data.phases,
+            }))
+          }
           setPlots(data.plots || [])
           setLoading(false)
         }
@@ -98,12 +145,43 @@ export default function PlotViewer({
     return () => {
       isMounted = false
     }
-  }, [fetchUrl])
+  }, [fetchUrl, initialPlots])
 
-  // Active display plots (props override or fetched state)
-  const displayPlots = (initialPlots && initialPlots.length > 0) ? initialPlots : plots
+  // Active display plots (phase-specific if phases exist, else fallback to props or fetched state)
+  const displayPlots = React.useMemo(() => {
+    if (currentPhase) {
+      const phaseName = (currentPhase.name || `Phase ${currentPhaseIdx + 1}`).trim()
+      let pList = Array.isArray(currentPhase.plots) ? currentPhase.plots : []
+      if (pList.length > 0 && pList.some((p) => p.phase)) {
+        return pList.filter(
+          (p) => !p.phase || String(p.phase).trim().toLowerCase() === phaseName.toLowerCase()
+        )
+      }
+      if (pList.length === 0 && Array.isArray(initialPlots) && initialPlots.length > 0) {
+        return initialPlots.filter(
+          (p) => p.phase && String(p.phase).trim().toLowerCase() === phaseName.toLowerCase()
+        )
+      }
+      if (pList.length === 0 && Array.isArray(plots) && plots.length > 0) {
+        return plots.filter(
+          (p) => p.phase && String(p.phase).trim().toLowerCase() === phaseName.toLowerCase()
+        )
+      }
+      return pList
+    }
+    return Array.isArray(initialPlots) ? initialPlots : plots
+  }, [currentPhase, currentPhaseIdx, initialPlots, plots])
 
-  // Center & Fit Layout automatically when container mounts
+  const handlePhaseSelect = (idx) => {
+    setCurrentPhaseIdx(idx)
+    setSelectedPlot(null)
+    setHoveredPlot(null)
+    if (onPhaseChange) {
+      onPhaseChange(idx)
+    }
+  }
+
+  // Center & Fit Layout automatically when container mounts or phase changes
   const handleResetZoom = useCallback(() => {
     if (!containerRef.current) return
     const containerWidth = containerRef.current.clientWidth
@@ -120,6 +198,10 @@ export default function PlotViewer({
     setScale(initialScale)
     setPan({ x: initialPanX, y: initialPanY })
   }, [activeViewBox])
+
+  useEffect(() => {
+    handleResetZoom()
+  }, [currentPhaseIdx, activeViewBox, activeBackgroundUrl, handleResetZoom])
 
   useEffect(() => {
     handleResetZoom()
@@ -298,7 +380,12 @@ export default function PlotViewer({
     return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
   }
 
-  const layoutTitle = meta?.title || meta?.name || 'Layout Master Plan'
+  const rawTitle = meta?.title || meta?.name || 'Layout Master Plan'
+  const cleanTitle = rawTitle.replace(/\s*\((Phase\s*\d+|Layout\s*\d+)\)/gi, '').trim()
+  const layoutTitle =
+    currentPhase && layoutPhases && layoutPhases.length > 1
+      ? `${cleanTitle} (${currentPhase.name || `Phase ${currentPhaseIdx + 1}`})`
+      : rawTitle
   const subtitleParts = [
     meta?.sNo ? `S.No: ${meta.sNo}` : null,
     meta?.village,
@@ -337,6 +424,34 @@ export default function PlotViewer({
             </p>
           )}
         </div>
+
+        {/* Phase Switcher (if multiple phases exist) */}
+        {layoutPhases && layoutPhases.length > 1 && (
+          <div className="plot-viewer__phase-switcher" role="tablist" aria-label="Select layout phase">
+            {layoutPhases.map((phase, idx) => {
+              const isSelected = idx === currentPhaseIdx
+              const phasePlotCount = Array.isArray(phase.plots) ? phase.plots.length : 0
+              return (
+                <button
+                  key={phase.id || idx}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  onClick={() => handlePhaseSelect(idx)}
+                  className={`plot-viewer__phase-btn ${isSelected ? 'plot-viewer__phase-btn--active' : ''}`}
+                >
+                  <span className={`plot-viewer__phase-dot ${isSelected ? 'plot-viewer__phase-dot--active' : ''}`} />
+                  <span className="plot-viewer__phase-btn-text">{phase.name || `Phase ${idx + 1}`}</span>
+                  {phasePlotCount > 0 && (
+                    <span className="plot-viewer__phase-count">
+                      {phasePlotCount} {phasePlotCount === 1 ? 'Plot' : 'Plots'}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         {/* Filter Pills */}
         <div className="plot-viewer__filter-bar" role="tablist" aria-label="Filter plots by status">
@@ -425,24 +540,36 @@ export default function PlotViewer({
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
           }}
         >
-          <div className="plot-viewer__map-layers">
-            {/* 1. Background Layout Map Image / Blueprint */}
-            {activeBackgroundUrl && (
-              <img
-                src={activeBackgroundUrl}
-                alt={layoutTitle}
-                className="plot-viewer__bg-image"
-                draggable={false}
-              />
-            )}
+          {(() => {
+            const [, , vbW, vbH] = (activeViewBox || '0 0 1056 816').split(' ').map(Number)
+            const stageWidth = vbW || 1056
+            const stageHeight = vbH || 816
 
-            {/* 2. Interactive SVG Overlay Element (Dynamically fetched from DB) */}
-            <svg
-              viewBox={activeViewBox}
-              className="plot-viewer__overlay-svg"
-              aria-label="Interactive Plot Overlay"
-            >
-              {displayPlots.map((plot) => {
+            return (
+              <div
+                className="plot-viewer__map-layers"
+                style={{
+                  width: `${stageWidth}px`,
+                  height: `${stageHeight}px`,
+                }}
+              >
+                {/* 1. Background Layout Map Image / Blueprint */}
+                {activeBackgroundUrl && (
+                  <img
+                    src={activeBackgroundUrl}
+                    alt={layoutTitle}
+                    className="plot-viewer__bg-image"
+                    draggable={false}
+                  />
+                )}
+
+                {/* 2. Interactive SVG Overlay Element (Dynamically fetched from DB) */}
+                <svg
+                  viewBox={activeViewBox}
+                  className="plot-viewer__overlay-svg"
+                  aria-label="Interactive Plot Overlay"
+                >
+                  {displayPlots.map((plot) => {
                 const isMatch =
                   activeFilter === 'All' ||
                   plot.status === activeFilter ||
@@ -517,7 +644,9 @@ export default function PlotViewer({
               })}
             </svg>
           </div>
-        </div>
+        )
+      })()}
+    </div>
 
         {/* ── Floating Zoom Controls Toolbar ── */}
         <div className="plot-viewer__controls" role="toolbar" aria-label="Map zoom and navigation controls">

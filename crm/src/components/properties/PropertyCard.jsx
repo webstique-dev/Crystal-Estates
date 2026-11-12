@@ -16,7 +16,7 @@ const STATUS_STYLES = {
   'Sold': { dot: 'bg-slate-500', text: 'text-slate-800' },
 }
 
-export default function PropertyCard({ property, onEdit, onDelete }) {
+export default function PropertyCard({ property, onEdit, onDelete, onAddPlot }) {
   const [imgError, setImgError] = useState(false)
 
   // Status badge config
@@ -254,21 +254,19 @@ export default function PropertyCard({ property, onEdit, onDelete }) {
           </span>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            {(hasLayout || (property.plots && property.plots.length > 0)) && (
-              <button
-                type="button"
-                onClick={() => onEdit && onEdit(property)}
-                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0B57D0] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition"
-                title="Manage Plot Details & Path Data"
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>
-                  {property.plots && property.plots.length > 0
-                    ? `${property.plots.length} Plots`
-                    : '+ Add Plot'}
-                </span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => (onAddPlot ? onAddPlot(property) : onEdit && onEdit(property))}
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0B57D0] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition cursor-pointer"
+              title="Add & Manage Plot Details"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>
+                {property.plots && property.plots.length > 0
+                  ? `${property.plots.length} ${property.plots.length === 1 ? 'Plot' : 'Plots'}`
+                  : '+ Add Plot'}
+              </span>
+            </button>
 
             {hasLayout && (
               <a

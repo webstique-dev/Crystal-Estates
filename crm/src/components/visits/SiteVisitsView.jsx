@@ -7,28 +7,40 @@ import {
   MessageCircle,
   Calendar,
   Plus,
+  ChevronDown,
+  RotateCcw,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react'
 import ScheduleSiteVisitModal from './ScheduleSiteVisitModal'
 import LeadDrawer from '../leads/LeadDrawer'
 
 function getStatusPillStyle(status) {
   switch (status) {
+    case 'Pending':
+      return {
+        selectClass: 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100/80',
+        dotClass: 'bg-amber-500',
+        label: 'Pending',
+      }
+    case 'Scheduled':
     case 'Confirmed':
       return {
-        wrapper: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
-        dot: 'bg-emerald-500',
-        label: 'Confirmed',
+        selectClass: 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100/80',
+        dotClass: 'bg-blue-500',
+        label: 'Scheduled',
       }
-    case 'Tentative':
+    case 'Cancelled':
       return {
-        wrapper: 'bg-amber-50 text-amber-700 border border-amber-200/80',
-        dot: 'bg-amber-500',
-        label: 'Tentative',
+        selectClass: 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100/80',
+        dotClass: 'bg-rose-500',
+        label: 'Cancelled',
       }
+    case 'Completed':
     default:
       return {
-        wrapper: 'bg-slate-100 text-slate-600 border border-slate-200/80',
-        dot: 'bg-slate-500',
+        selectClass: 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100/80',
+        dotClass: 'bg-emerald-600',
         label: 'Completed',
       }
   }
@@ -56,15 +68,36 @@ export default function SiteVisitsView({
   } = leadsState
 
   const [selectedLead, setSelectedLead] = useState(null)
+  const [isCompletedOpen, setIsCompletedOpen] = useState(false)
+  const [isCancelledOpen, setIsCancelledOpen] = useState(false)
 
-  const upcomingVisits = visits.filter((v) => v.status !== 'Completed')
+  const upcomingVisits = visits.filter(
+    (v) =>
+      v.status === 'Pending' ||
+      v.status === 'Scheduled' ||
+      v.status === 'Confirmed' ||
+      v.status === 'Tentative' ||
+      (!v.status && v.status !== 'Completed' && v.status !== 'Cancelled')
+  )
   const completedVisits = visits.filter((v) => v.status === 'Completed')
+  const cancelledVisits = visits.filter((v) => v.status === 'Cancelled')
+
+  const handleStatusChange = async (visit, newStatus) => {
+    if (visit.status === newStatus) return
+    try {
+      await updateVisit(visit.id, { status: newStatus })
+      if (refreshLeads) refreshLeads()
+      if (onShowToast) onShowToast(`Status updated to "${newStatus}" for ${visit.leadName}`)
+    } catch (err) {
+      if (onShowToast) onShowToast(err.message, 'error')
+    }
+  }
 
   const handleConfirmVisit = async (visit) => {
     try {
-      await updateVisit(visit.id, { status: 'Confirmed' })
+      await updateVisit(visit.id, { status: 'Scheduled' })
       if (refreshLeads) refreshLeads()
-      if (onShowToast) onShowToast(`Visit confirmed for ${visit.leadName}`)
+      if (onShowToast) onShowToast(`Visit scheduled for ${visit.leadName}`)
     } catch (err) {
       if (onShowToast) onShowToast(err.message, 'error')
     }
@@ -88,8 +121,8 @@ export default function SiteVisitsView({
     }
   }
 
-  const renderVisitCard = (visit, isCompleted = false) => {
-    const pill = getStatusPillStyle(isCompleted ? 'Completed' : visit.status)
+  const renderVisitCard = (visit) => {
+    const pill = getStatusPillStyle(visit.status || 'Pending')
     const cleanPhone = (visit.leadPhone || '').replace(/[^0-9]/g, '')
     const whatsappMsg = `Hello ${visit.leadName}, reminder for your Crystal Estates site visit at ${visit.property} (${visit.location}) on ${visit.dateLabel} at ${visit.visitTime}.${
       visit.cabPickup ? ' Cab pickup has been arranged.' : ''
@@ -98,13 +131,17 @@ export default function SiteVisitsView({
       whatsappMsg
     )}`
 
+    const isPending = visit.status === 'Pending'
+    const isCompleted = visit.status === 'Completed'
+    const isCancelled = visit.status === 'Cancelled'
+
     return (
       <div
         key={visit.id}
         className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between hover:shadow-sm transition-shadow"
       >
         <div>
-          {/* Top Row: Date + Weekday/Time + Status Pill */}
+          {/* Top Row: Date + Weekday/Time + Status Dropdown */}
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-lg font-bold text-slate-900 leading-tight">
@@ -115,12 +152,22 @@ export default function SiteVisitsView({
               </div>
             </div>
 
-            <span
-              className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full shrink-0 ${pill.wrapper}`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${pill.dot}`} />
-              <span>{pill.label}</span>
-            </span>
+            {/* Interactive Status Dropdown */}
+            <div className="relative inline-flex items-center shrink-0">
+              <select
+                value={visit.status || 'Pending'}
+                onChange={(e) => handleStatusChange(visit, e.target.value)}
+                className={`appearance-none text-[11px] font-bold pl-5 pr-6 py-1 rounded-full cursor-pointer transition border shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-offset-1 ${pill.selectClass}`}
+                aria-label="Change site visit status"
+              >
+                <option value="Pending">Pending</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+              <span className={`absolute left-2 w-1.5 h-1.5 rounded-full pointer-events-none ${pill.dotClass}`} />
+              <ChevronDown className="absolute right-1.5 w-3 h-3 pointer-events-none opacity-60" />
+            </div>
           </div>
 
           <div className="border-t border-slate-100 my-3.5" />
@@ -176,40 +223,74 @@ export default function SiteVisitsView({
               )}
             </div>
           </div>
+
+          {/* Customer Message / Notes */}
+          {visit.notes && (
+            <div className="mt-3.5 p-2.5 bg-slate-50/90 rounded-xl border border-slate-100 text-xs text-slate-600">
+              <span className="font-semibold text-slate-700 block text-[10px] uppercase tracking-wider mb-0.5">
+                Notes / Customer Request
+              </span>
+              <p className="line-clamp-3 leading-relaxed text-slate-600">{visit.notes}</p>
+            </div>
+          )}
         </div>
 
-        {/* Action Buttons Row (Upcoming visits only) */}
-        {!isCompleted && (
-          <div className="mt-4 pt-2 flex items-center flex-wrap gap-2">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold shadow-2xs transition no-underline"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span>Send reminder</span>
-            </a>
+        {/* Action Buttons Row */}
+        <div className="mt-4 pt-2 flex items-center flex-wrap gap-2">
+          {!isCompleted && !isCancelled && (
+            <>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold shadow-2xs transition no-underline"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Send reminder</span>
+              </a>
 
-            {visit.status === 'Tentative' && (
+              {isPending && (
+                <button
+                  type="button"
+                  onClick={() => handleConfirmVisit(visit)}
+                  className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold shadow-2xs transition"
+                >
+                  Schedule
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={() => handleConfirmVisit(visit)}
+                onClick={() => handleMarkVisited(visit)}
                 className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 text-xs font-bold shadow-2xs transition"
               >
-                Confirm
+                Mark visited
               </button>
-            )}
+            </>
+          )}
 
+          {isCompleted && (
             <button
               type="button"
-              onClick={() => handleMarkVisited(visit)}
-              className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 text-xs font-bold shadow-2xs transition"
+              onClick={() => handleStatusChange(visit, 'Scheduled')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-600 text-xs font-bold shadow-2xs transition"
             >
-              Mark visited
+              <RotateCcw className="w-3 h-3" />
+              <span>Reopen visit</span>
             </button>
-          </div>
-        )}
+          )}
+
+          {isCancelled && (
+            <button
+              type="button"
+              onClick={() => handleStatusChange(visit, 'Scheduled')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-600 text-xs font-bold shadow-2xs transition"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reschedule visit</span>
+            </button>
+          )}
+        </div>
       </div>
     )
   }
@@ -249,7 +330,7 @@ export default function SiteVisitsView({
 
             {upcomingVisits.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {upcomingVisits.map((visit) => renderVisitCard(visit, false))}
+                {upcomingVisits.map((visit) => renderVisitCard(visit))}
               </div>
             ) : (
               <div className="p-10 text-center bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
@@ -275,15 +356,81 @@ export default function SiteVisitsView({
             )}
           </div>
 
-          {/* ── COMPLETED SECTION ── */}
+          {/* ── COMPLETED SECTION (Dropdown / Collapsible) ── */}
           {completedVisits.length > 0 && (
             <div className="space-y-3">
-              <div className="px-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                COMPLETED
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {completedVisits.map((visit) => renderVisitCard(visit, true))}
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsCompletedOpen(!isCompletedOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl shadow-2xs transition group cursor-pointer text-left"
+                aria-expanded={isCompletedOpen}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold tracking-wider text-slate-700 uppercase">
+                    Completed Visits
+                  </span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                    {completedVisits.length}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold group-hover:text-slate-600 transition">
+                  <span>{isCompletedOpen ? 'Hide' : 'View'}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                      isCompletedOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </div>
+              </button>
+
+              {isCompletedOpen && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-1">
+                  {completedVisits.map((visit) => renderVisitCard(visit))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── CANCELLED SECTION (Dropdown / Collapsible) ── */}
+          {cancelledVisits.length > 0 && (
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setIsCancelledOpen(!isCancelledOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl shadow-2xs transition group cursor-pointer text-left"
+                aria-expanded={isCancelledOpen}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                    <XCircle className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs font-bold tracking-wider text-slate-700 uppercase">
+                    Cancelled Visits
+                  </span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                    {cancelledVisits.length}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold group-hover:text-slate-600 transition">
+                  <span>{isCancelledOpen ? 'Hide' : 'View'}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                      isCancelledOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </div>
+              </button>
+
+              {isCancelledOpen && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-1">
+                  {cancelledVisits.map((visit) => renderVisitCard(visit))}
+                </div>
+              )}
             </div>
           )}
         </>

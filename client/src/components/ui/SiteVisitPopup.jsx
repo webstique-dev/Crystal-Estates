@@ -41,6 +41,7 @@ export default function SiteVisitPopup() {
     phone: '',
     project: '',
     datePreference: 'This Saturday',
+    message: '',
   })
 
   const timerRef = useRef(null)
@@ -84,24 +85,42 @@ export default function SiteVisitPopup() {
     e.preventDefault()
     setFormSubmitted(true)
 
-    // Save automatically to database under New Leads in CRM
+    // Save automatically to database under Site Visits & Leads in CRM
     try {
-      const payload = {
+      const visitPayload = {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         property: formData.project || 'General Site Visit',
-        interest: formData.project || 'General Site Visit',
+        project: formData.project || 'General Site Visit',
+        date: formData.datePreference || 'This Saturday',
         datePreference: formData.datePreference || 'This Saturday',
-        followUpDate: formData.datePreference || 'This Saturday',
+        notes: (formData.message || '').trim(),
+        message: (formData.message || '').trim(),
+        status: 'Pending',
+        cabPickup: false,
         source: 'Website - Site Visit Popup',
-        stage: 'new',
-        notes: `Requested guided site visit for ${formData.project || 'property'} on ${formData.datePreference}`,
       }
 
+      // 1. Create site visit directly in CRM Site Visits section
+      await fetch('/api/visits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(visitPayload),
+      }).catch((err) => {
+        console.warn('Site visit POST failed:', err)
+      })
+
+      // 2. Also register enquiry for lead pipeline
       await fetch('/api/enquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...visitPayload,
+          interest: visitPayload.property,
+          followUpDate: formData.datePreference || 'This Saturday',
+          stage: 'sitevisit',
+          isSiteVisit: true,
+        }),
       }).catch((err) => {
         console.warn('Site visit enquiry POST failed:', err)
       })
@@ -109,7 +128,7 @@ export default function SiteVisitPopup() {
       console.warn('Site visit enquiry error:', err)
     }
 
-    const msg = `*New Site Visit Request (Crystal Estates)*\n\n👤 *Name:* ${formData.name}\n📞 *Phone:* ${formData.phone}\n📍 *Project:* ${formData.project}\n📅 *Preferred Day:* ${formData.datePreference}\n\nPlease confirm our appointment and share the site location pin.`
+    const msg = `*New Site Visit Request (Crystal Estates)*\n\n👤 *Name:* ${formData.name}\n📞 *Phone:* ${formData.phone}\n📍 *Project:* ${formData.project}\n📅 *Preferred Day:* ${formData.datePreference}${formData.message ? `\n💬 *Message:* ${formData.message}` : ''}\n\nPlease confirm our appointment and share the site location pin.`
 
     setTimeout(() => {
       window.open(
@@ -315,6 +334,18 @@ export default function SiteVisitPopup() {
                       <option value="Upcoming Weekday">Upcoming Weekday (Custom Schedule)</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Optional Message Field */}
+                <div className="svp-field">
+                  <label htmlFor="svp-notes">Additional Message / Note (Optional)</label>
+                  <textarea
+                    id="svp-notes"
+                    rows={2}
+                    placeholder="e.g. Need cab pickup, visiting with family of 3, specific plot interest..."
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  />
                 </div>
 
                 {/* Trust Points */}

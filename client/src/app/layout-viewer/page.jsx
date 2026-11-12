@@ -10,9 +10,12 @@ import { business } from '../../data/site'
 function LayoutViewerContent() {
   const searchParams = useSearchParams()
   const slugParam = searchParams.get('slug') || searchParams.get('layout') || searchParams.get('project') || searchParams.get('id')
+  const phaseParam = searchParams.get('phase')
 
   const [metadata, setMetadata] = useState(null)
   const [plots, setPlots] = useState([])
+  const [phases, setPhases] = useState([])
+  const [activePhaseIndex, setActivePhaseIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -32,6 +35,20 @@ function LayoutViewerContent() {
             if (data.success && isMounted) {
               setMetadata(data.metadata)
               setPlots(data.plots || [])
+              const rawPhases = Array.isArray(data.layouts) && data.layouts.length > 0
+                ? data.layouts
+                : Array.isArray(data.phases) && data.phases.length > 0
+                ? data.phases
+                : []
+              setPhases(rawPhases)
+              if (phaseParam && rawPhases.length > 0) {
+                const matchIdx = rawPhases.findIndex(
+                  (p) =>
+                    String(p.id).toLowerCase() === phaseParam.toLowerCase() ||
+                    String(p.name).toLowerCase() === phaseParam.toLowerCase()
+                )
+                if (matchIdx >= 0) setActivePhaseIndex(matchIdx)
+              }
               setLoading(false)
               return
             }
@@ -44,6 +61,20 @@ function LayoutViewerContent() {
             if (data.success && data.plot && isMounted) {
               const p = data.plot
               const layoutUrl = p.layoutBackgroundUrl || p.layoutUrl || null
+              const rawPhases = Array.isArray(p.layouts) && p.layouts.length > 0
+                ? p.layouts
+                : Array.isArray(p.phases) && p.phases.length > 0
+                ? p.phases
+                : []
+              setPhases(rawPhases)
+              if (phaseParam && rawPhases.length > 0) {
+                const matchIdx = rawPhases.findIndex(
+                  (ph) =>
+                    String(ph.id).toLowerCase() === phaseParam.toLowerCase() ||
+                    String(ph.name).toLowerCase() === phaseParam.toLowerCase()
+                )
+                if (matchIdx >= 0) setActivePhaseIndex(matchIdx)
+              }
               setMetadata({
                 slug: p.layoutSlug || p.slug || p.projectId || p.id,
                 name: p.name || p.projectName,
@@ -59,7 +90,7 @@ function LayoutViewerContent() {
                 width: p.width || 1056,
                 height: p.height || 816,
               })
-              setPlots([])
+              setPlots(Array.isArray(p.plots) ? p.plots : [])
               setLoading(false)
               return
             }
@@ -78,6 +109,7 @@ function LayoutViewerContent() {
               if (details.success && isMounted) {
                 setMetadata(details.metadata || first)
                 setPlots(details.plots || [])
+                setPhases(details.layouts || details.phases || [])
                 setLoading(false)
                 return
               }
@@ -107,7 +139,7 @@ function LayoutViewerContent() {
     return () => {
       isMounted = false
     }
-  }, [slugParam])
+  }, [slugParam, phaseParam])
 
   if (loading) {
     return (
@@ -179,6 +211,44 @@ function LayoutViewerContent() {
 
   const backLink = slugParam ? `/projects/${slugParam}` : '/projects'
 
+  const currentPhase = phases[activePhaseIndex] || null
+  const activeLayoutUrl =
+    currentPhase?.layoutUrl ||
+    currentPhase?.layoutBackgroundUrl ||
+    metadata?.layoutBackgroundUrl ||
+    metadata?.layoutUrl
+
+  const activePlots = (() => {
+    if (currentPhase) {
+      const phaseName = (currentPhase.name || `Phase ${activePhaseIndex + 1}`).trim()
+      let pList = Array.isArray(currentPhase.plots) ? currentPhase.plots : []
+      if (pList.length > 0 && pList.some((p) => p.phase)) {
+        return pList.filter(
+          (p) => !p.phase || String(p.phase).trim().toLowerCase() === phaseName.toLowerCase()
+        )
+      }
+      if (pList.length === 0 && Array.isArray(plots) && plots.length > 0) {
+        return plots.filter(
+          (p) => p.phase && String(p.phase).trim().toLowerCase() === phaseName.toLowerCase()
+        )
+      }
+      return pList
+    }
+    return plots
+  })()
+
+  const activeViewBox = currentPhase?.viewBox || metadata?.viewBox || '0 0 1056 816'
+
+  const handlePhaseChange = (idx) => {
+    setActivePhaseIndex(idx)
+    const ph = phases[idx]
+    if (ph && typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.set('phase', ph.name || `phase-${idx + 1}`)
+      window.history.replaceState({}, '', url.toString())
+    }
+  }
+
   return (
     <div
       style={{
@@ -194,10 +264,22 @@ function LayoutViewerContent() {
       }}
     >
       <PlotViewer
-        initialPlots={plots.length > 0 ? plots : null}
-        metadata={metadata}
-        backgroundUrl={metadata.layoutBackgroundUrl}
-        viewBox={metadata.viewBox || '0 0 1056 816'}
+        key={`${slugParam}-${currentPhase?.id || activePhaseIndex}-${activeLayoutUrl}`}
+        initialPlots={activePlots}
+        phases={phases}
+        activePhase={activePhaseIndex}
+        onPhaseChange={handlePhaseChange}
+        fetchUrl={null}
+        metadata={{
+          ...metadata,
+          layouts: phases,
+          phases: phases,
+          title: metadata.title || metadata.name || 'Layout',
+          layoutBackgroundUrl: activeLayoutUrl,
+          viewBox: activeViewBox,
+        }}
+        backgroundUrl={activeLayoutUrl}
+        viewBox={activeViewBox}
         whatsappNumber={business?.whatsapp || '919444000000'}
         className="plot-viewer--fullpage"
         backHref={backLink}

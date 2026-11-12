@@ -390,20 +390,28 @@
 }
 
 .svp-field input,
-.svp-field select {
+.svp-field select,
+.svp-field textarea {
   width: 100%;
   padding: 10px 12px;
   border-radius: 9px;
   border: 1.5px solid var(--line, #e2dcce);
   background: #ffffff;
   font-size: 13.5px;
+  font-family: inherit;
   color: var(--ink, #22262a);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   box-sizing: border-box;
 }
 
+.svp-field textarea {
+  resize: vertical;
+  min-height: 48px;
+}
+
 .svp-field input:focus,
-.svp-field select:focus {
+.svp-field select:focus,
+.svp-field textarea:focus {
   outline: none;
   border-color: var(--green-900, #0a5c36);
   box-shadow: 0 0 0 3px rgba(10, 92, 54, 0.12);

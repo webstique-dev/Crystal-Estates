@@ -59,6 +59,20 @@ function getSvgDetailsFromFile(filePath) {
   }
 }
 
+function resolveSvgFilePath(urlPath) {
+  if (!urlPath) return null
+  const filename = path.basename(urlPath)
+  const candidatePaths = [
+    path.join(rootDir, 'client/public/plots', filename),
+    path.join(rootDir, 'server/uploads/plots', filename),
+    path.join(rootDir, 'crm/public/plots', filename),
+  ]
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) return p
+  }
+  return null
+}
+
 /**
  * GET /api/plots/layouts
  * Retrieve list of all available layout maps strictly from MongoDB (layout_metadata and featured_plots with layouts)
@@ -204,14 +218,71 @@ router.get('/layout/:slug', async (req, res) => {
       })
     }
 
+    // Ensure viewBox strictly matches SVG file coordinate system if available
+    const targetUrl = metadataDoc.layoutBackgroundUrl || metadataDoc.layoutUrl
+    if (targetUrl && /\.svg$/i.test(targetUrl)) {
+      const svgPath = resolveSvgFilePath(targetUrl)
+      if (svgPath) {
+        const svgDetails = getSvgDetailsFromFile(svgPath)
+        if (svgDetails && svgDetails.viewBox) {
+          metadataDoc.viewBox = svgDetails.viewBox
+          metadataDoc.width = svgDetails.width
+          metadataDoc.height = svgDetails.height
+        }
+      }
+    }
+
     const resolvedPlots = (dbPlots && dbPlots.length > 0) ? dbPlots : (propertyDoc?.plots || [])
+
+    const phaseQuery = req.query.phase || req.query.layoutPhase
+    let finalPlots = resolvedPlots
+    let finalMeta = metadataDoc
+
+    if (propertyDoc && Array.isArray(propertyDoc.layouts) && propertyDoc.layouts.length > 0) {
+      if (phaseQuery) {
+        const found = propertyDoc.layouts.find(
+          (l) =>
+            String(l.id).toLowerCase() === String(phaseQuery).toLowerCase() ||
+            String(l.name).toLowerCase() === String(phaseQuery).toLowerCase()
+        )
+        if (found) {
+          finalPlots = Array.isArray(found.plots) ? found.plots : []
+          if (found.layoutUrl) {
+            finalMeta = {
+              ...metadataDoc,
+              title: `${metadataDoc.title || metadataDoc.name} (${found.name})`,
+              layoutBackgroundUrl: found.layoutUrl,
+              layoutUrl: found.layoutUrl,
+              viewBox: found.viewBox || metadataDoc.viewBox,
+              width: found.width || metadataDoc.width,
+              height: found.height || metadataDoc.height,
+            }
+          }
+        }
+      }
+    } else if (phaseQuery && Array.isArray(resolvedPlots)) {
+      finalPlots = resolvedPlots.filter(
+        (p) => p.phase && String(p.phase).toLowerCase() === String(phaseQuery).toLowerCase()
+      )
+    }
+
+    const layoutPhases = propertyDoc?.layouts || propertyDoc?.phases || metaDoc?.layouts || metaDoc?.phases || null
+    if (layoutPhases) {
+      finalMeta = {
+        ...finalMeta,
+        layouts: layoutPhases,
+        phases: layoutPhases,
+      }
+    }
 
     return res.json({
       success: true,
       slug,
       source: 'database',
-      metadata: metadataDoc,
-      plots: resolvedPlots,
+      metadata: finalMeta,
+      plots: finalPlots,
+      layouts: layoutPhases,
+      phases: layoutPhases,
     })
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message })
@@ -265,6 +336,21 @@ router.put(['/layout/:slug/plots', '/layout/:slug/batch'], async (req, res) => {
       await db.collection(collectionName).insertMany(formattedPlots)
     }
 
+    const layoutSyncFields = {
+      plots: formattedPlots,
+      totalPlots: formattedPlots.length,
+      availablePlots: formattedPlots.filter((p) => p.status === 'Available').length,
+      hasLayoutMap: true,
+      updatedAt: new Date(),
+    }
+    if (Array.isArray(req.body.layouts)) {
+      layoutSyncFields.layouts = req.body.layouts
+      layoutSyncFields.phases = req.body.layouts
+    } else if (Array.isArray(req.body.phases)) {
+      layoutSyncFields.layouts = req.body.phases
+      layoutSyncFields.phases = req.body.phases
+    }
+
     // 2. Sync to featured_plots collection
     await db.collection('featured_plots').updateMany(
       {
@@ -276,13 +362,7 @@ router.put(['/layout/:slug/plots', '/layout/:slug/batch'], async (req, res) => {
         ],
       },
       {
-        $set: {
-          plots: formattedPlots,
-          totalPlots: formattedPlots.length,
-          availablePlots: formattedPlots.filter((p) => p.status === 'Available').length,
-          hasLayoutMap: true,
-          updatedAt: new Date(),
-        },
+        $set: layoutSyncFields,
       }
     )
 

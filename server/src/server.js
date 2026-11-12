@@ -282,6 +282,62 @@ app.post('/api/enquiry', async (req, res) => {
 
     await db.collection('leads').insertOne(newLead)
 
+    // If this enquiry is a site visit request, automatically record it in site_visits collection
+    if (body.isSiteVisit || leadSource.toLowerCase().includes('site visit') || body.datePreference) {
+      try {
+        const matchedPlot = await db.collection('plots').findOne(
+          { name: { $regex: `^${propertyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
+          { projection: { _id: 0, location: 1 } }
+        )
+        const location = (body.location || matchedPlot?.location || 'Chennai').trim()
+        const visitDateRaw = body.datePreference || body.date || 'This Saturday'
+        
+        let d = new Date()
+        const raw = String(visitDateRaw).toLowerCase()
+        if (raw.includes('saturday')) {
+          const diff = (6 - d.getDay() + 7) % 7 || 7
+          d.setDate(d.getDate() + diff)
+        } else if (raw.includes('sunday')) {
+          const diff = (7 - d.getDay()) % 7 || 7
+          d.setDate(d.getDate() + diff)
+        } else if (raw.includes('weekday')) {
+          d.setDate(d.getDate() + 1)
+          if (d.getDay() === 0) d.setDate(d.getDate() + 1)
+          if (d.getDay() === 6) d.setDate(d.getDate() + 2)
+        } else {
+          d.setDate(d.getDate() + 1)
+        }
+        const isoDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        const dateLabel = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+        const weekdayLabel = d.toLocaleDateString('en-US', { weekday: 'long' })
+
+        const newVisit = {
+          id: `visit-${Date.now()}`,
+          leadId: id,
+          leadName: name,
+          leadPhone: phone,
+          leadEmail: email,
+          leadInitials: name.split(/\s+/).filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'CE',
+          property: propertyName,
+          location,
+          visitDate: isoDate,
+          dateLabel,
+          weekdayLabel,
+          visitTime: '11:00 am',
+          status: 'Pending',
+          cabPickup: Boolean(body.cabPickup),
+          assignedAgent,
+          notes: finalNotes,
+          source: leadSource,
+          createdAt: createdDate,
+          updatedAt: createdDate,
+        }
+        await db.collection('site_visits').insertOne(newVisit)
+      } catch (visitErr) {
+        console.warn('Auto site_visits insert error in /api/enquiry:', visitErr.message)
+      }
+    }
+
     // Exclude Mongo _id from response
     const { _id, ...savedLead } = newLead
 

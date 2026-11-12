@@ -12,9 +12,25 @@ function getInitials(name = '') {
 
 function formatVisitDateParts(dateStr, timeStr) {
   let d = new Date()
+  const raw = String(dateStr || '').trim().toLowerCase()
+
   if (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     const [y, m, day] = dateStr.split('-').map(Number)
     d = new Date(y, m - 1, day)
+  } else if (raw.includes('saturday')) {
+    const curDay = d.getDay() // 0 is Sun, 6 is Sat
+    const diff = (6 - curDay + 7) % 7 || 7
+    d.setDate(d.getDate() + diff)
+  } else if (raw.includes('sunday')) {
+    const curDay = d.getDay()
+    const diff = (7 - curDay) % 7 || 7
+    d.setDate(d.getDate() + diff)
+  } else if (raw.includes('weekday') || raw.includes('custom')) {
+    d.setDate(d.getDate() + 1)
+    if (d.getDay() === 0) d.setDate(d.getDate() + 1)
+    if (d.getDay() === 6) d.setDate(d.getDate() + 2)
+  } else if (raw.includes('tomorrow')) {
+    d.setDate(d.getDate() + 1)
   } else {
     d.setDate(d.getDate() + 1)
   }
@@ -27,7 +43,7 @@ function formatVisitDateParts(dateStr, timeStr) {
     const trimmed = String(timeStr).trim()
     if (/\b(am|pm)\b/i.test(trimmed)) {
       timeLabel = trimmed.replace(/^0/, '').toLowerCase()
-    } else {
+    } else if (trimmed.includes(':')) {
       const [hStr, mStr] = trimmed.split(':')
       const h = parseInt(hStr, 10)
       const m = parseInt(mStr || '0', 10)
@@ -154,76 +170,157 @@ router.get('/', async (req, res) => {
 
 /**
  * POST /api/visits
- * Schedule a new site visit and sync lead stage/activity
+ * Schedule a new site visit (from CRM or Website) and sync lead stage/activity
  */
 router.post('/', async (req, res) => {
   try {
     const {
       leadId,
       date,
+      preferredDay,
+      datePreference,
       time = '11:00 AM',
-      status = 'Confirmed',
+      status,
       cabPickup = false,
       location,
       property,
+      project,
+      interest,
       assignedAgent,
       notes = '',
+      message = '',
+      source = 'Website - Site Visit Request',
       moveToSiteVisit = true,
     } = req.body
 
-    if (!leadId) {
-      return res.status(400).json({ success: false, error: 'leadId is required' })
-    }
-
     const db = await getDb()
-    const lead = await db.collection('leads').findOne({ id: leadId }, { projection: { _id: 0 } })
-    if (!lead) {
-      return res.status(404).json({ success: false, error: 'Lead not found' })
+
+    // 1. Resolve lead or create one automatically if website request
+    let targetLead = null
+    if (leadId) {
+      targetLead = await db.collection('leads').findOne({ id: leadId }, { projection: { _id: 0 } })
     }
 
-    const propName = (property || lead.property || 'Crystal Estates').trim()
+    const clientPhone = (req.body.phone || req.body.leadPhone || '').trim()
+    const clientName = (req.body.name || req.body.leadName || req.body.fullName || '').trim()
+    const clientEmail = (req.body.email || req.body.leadEmail || '').trim()
+    const propName = (property || project || interest || targetLead?.property || 'Crystal Estates').trim()
+    const rawDate = date || preferredDay || datePreference || 'This Saturday'
+    const customerNotes = (notes || message || '').trim()
+
+    if (!targetLead) {
+      // Look up existing lead by phone if available
+      if (clientPhone) {
+        targetLead = await db.collection('leads').findOne({ phone: clientPhone }, { projection: { _id: 0 } })
+      }
+
+      if (!targetLead) {
+        if (!clientName && !clientPhone) {
+          return res.status(400).json({ success: false, error: 'Customer name or phone number is required' })
+        }
+
+        const newLeadId = `lead-${Date.now()}`
+        let assigned = assignedAgent
+        if (!assigned || !assigned.name) {
+          const defaultUser = await db.collection('users').findOne({}, { projection: { name: 1, color: 1, initials: 1 } })
+          assigned = defaultUser
+            ? { name: defaultUser.name, initials: defaultUser.initials || 'CA', color: defaultUser.color || '#0B57D0' }
+            : { name: 'Crystal Admin', initials: 'CA', color: '#0B57D0' }
+        }
+
+        const now = new Date()
+        targetLead = {
+          id: newLeadId,
+          name: clientName || 'Website Lead',
+          phone: clientPhone || '',
+          email: clientEmail || '',
+          property: propName,
+          stage: 'sitevisit',
+          source: source || 'Website - Site Visit Popup',
+          budget: 0,
+          budgetFormatted: 'TBD',
+          assignedAgent: assigned,
+          requirement: 'Site Visit',
+          unit: 'Not allotted',
+          followUpDate: rawDate,
+          notes: customerNotes || `Requested site visit for ${propName} (${rawDate})`,
+          upcomingFollowUps: [
+            {
+              id: `fu-${newLeadId}`,
+              type: 'Site visit',
+              title: `Site visit for ${propName} with ${clientName || 'customer'}`,
+              when: rawDate,
+              completed: false,
+              createdAt: now,
+            },
+          ],
+          activity: [
+            {
+              id: `act-${Date.now()}-new`,
+              text: `Site visit requested via ${source} for ${propName}`,
+              time: 'Just now',
+              createdAt: now,
+            },
+          ],
+          payments: [],
+          createdAt: now,
+          updatedAt: now,
+        }
+
+        await db.collection('leads').insertOne({ ...targetLead })
+      }
+    }
+
+    // 2. Resolve plot/property location
     const matchedPlot = await db.collection('plots').findOne(
       { name: { $regex: `^${propName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
       { projection: { _id: 0, location: 1 } }
     )
-
-    const { isoDate, dateLabel, weekdayLabel, timeLabel } = formatVisitDateParts(date, time)
     const resolvedLocation = (location || matchedPlot?.location || 'Chennai').trim()
-    const resolvedAgent = assignedAgent || lead.assignedAgent || {
+
+    // 3. Date & time parts
+    const { isoDate, dateLabel, weekdayLabel, timeLabel } = formatVisitDateParts(rawDate, time)
+
+    // 4. Resolve agent
+    const resolvedAgent = assignedAgent || targetLead?.assignedAgent || {
       name: 'Crystal Admin',
       initials: 'CA',
       color: '#0B57D0',
     }
-    const cleanStatus = status === 'Tentative' ? 'Tentative' : 'Confirmed'
 
+    // 5. Initial status: Pending for website requests, Scheduled/Confirmed for CRM
+    const initialStatus = status || (leadId ? 'Scheduled' : 'Pending')
+
+    // 6. Create site visit record
     const newVisit = {
       id: `visit-${Date.now()}`,
-      leadId: lead.id,
-      leadName: lead.name,
-      leadPhone: lead.phone || '',
-      leadEmail: lead.email || '',
-      leadInitials: getInitials(lead.name),
+      leadId: targetLead.id,
+      leadName: targetLead.name || clientName,
+      leadPhone: targetLead.phone || clientPhone,
+      leadEmail: targetLead.email || clientEmail,
+      leadInitials: getInitials(targetLead.name || clientName),
       property: propName,
       location: resolvedLocation,
       visitDate: isoDate,
       dateLabel,
       weekdayLabel,
       visitTime: timeLabel,
-      status: cleanStatus,
+      status: initialStatus,
       cabPickup: Boolean(cabPickup),
       assignedAgent: resolvedAgent,
-      notes: (notes || '').trim(),
+      notes: customerNotes || `Requested site visit for ${propName} on ${rawDate}`,
+      source: source || 'Website',
       createdAt: new Date(),
       updatedAt: new Date(),
     }
 
     await db.collection('site_visits').insertOne({ ...newVisit })
 
-    // Sync lead stage, followUpDate & activity timeline
+    // 7. Sync lead followUpDate & timeline
     const activitiesToPush = [
       {
         id: `act-${Date.now()}-visit`,
-        text: `Site visit scheduled (${cleanStatus}) for ${dateLabel} · ${timeLabel}${
+        text: `Site visit registered (${initialStatus}) for ${dateLabel} · ${timeLabel}${
           cabPickup ? ' with Cab pickup' : ''
         }`,
         time: 'Just now',
@@ -236,8 +333,8 @@ router.post('/', async (req, res) => {
       updatedAt: new Date(),
     }
 
-    const currentStage = (lead.stage || '').toLowerCase().replace(/\s+/g, '')
-    if (moveToSiteVisit && currentStage !== 'sitevisit') {
+    const currentStage = (targetLead.stage || '').toLowerCase().replace(/\s+/g, '')
+    if (moveToSiteVisit && currentStage !== 'sitevisit' && currentStage !== 'sitevisitdone') {
       updateSet.stage = 'sitevisit'
       activitiesToPush.unshift({
         id: `act-${Date.now()}-stage`,
@@ -248,7 +345,7 @@ router.post('/', async (req, res) => {
     }
 
     await db.collection('leads').updateOne(
-      { id: lead.id },
+      { id: targetLead.id },
       {
         $set: updateSet,
         $push: {
@@ -257,7 +354,7 @@ router.post('/', async (req, res) => {
       }
     )
 
-    const updatedLead = await db.collection('leads').findOne({ id: lead.id }, { projection: { _id: 0 } })
+    const updatedLead = await db.collection('leads').findOne({ id: targetLead.id }, { projection: { _id: 0 } })
 
     return res.status(201).json({
       success: true,
@@ -379,6 +476,21 @@ router.patch('/:id', async (req, res) => {
           time: 'Just now',
           createdAt: new Date(),
         })
+      } else if (
+        (updates.status === 'Scheduled' || updates.status === 'Confirmed' || updates.status === 'Pending') &&
+        targetLead &&
+        targetLead.stage === 'sitevisitdone'
+      ) {
+        leadUpdateSet.stage = 'sitevisit'
+        leadUpdateSet.followUpDate = `${updatedVisit.dateLabel || 'Scheduled'}, ${updatedVisit.visitTime || '11:00 am'}`
+        newActivities.unshift({
+          id: `act-${Date.now()}-stage-reopen`,
+          text: `Pipeline stage moved back to "Site visit" (${updates.status})`,
+          time: 'Just now',
+          createdAt: new Date(),
+        })
+      } else if (updates.status === 'Cancelled') {
+        leadUpdateSet.followUpDate = 'Visit Cancelled'
       }
 
       await db.collection('leads').updateOne(

@@ -68,13 +68,24 @@ export function useProperties() {
       approvalStatus: p.approvalStatus || p.approval || '',
       rera: p.rera || p.approvalStatus || p.approval || '',
       leadsCount: typeof p.leadsCount === 'number' ? p.leadsCount : null,
-      hasLayoutMap: Boolean(p.layoutBackgroundUrl || p.hasLayoutMap),
+      hasLayoutMap: Boolean(p.layoutBackgroundUrl || p.hasLayoutMap || (p.plots && p.plots.length > 0)),
       layoutSlug:
         p.layoutSlug ||
         (p.layoutBackgroundUrl
           ? p.layoutBackgroundUrl.replace('/plots/', '').replace('-layout.svg', '')
           : null),
       layoutBackgroundUrl: p.layoutBackgroundUrl || null,
+      layoutUrl: p.layoutUrl || p.layoutBackgroundUrl || null,
+      layoutImage: p.layoutImage || p.layoutBackgroundUrl || null,
+      layoutFileName: p.layoutFileName || null,
+      layouts: Array.isArray(p.layouts) ? p.layouts : (Array.isArray(p.phases) ? p.phases : []),
+      phases: Array.isArray(p.phases) ? p.phases : (Array.isArray(p.layouts) ? p.layouts : []),
+      plots: Array.isArray(p.plots) ? p.plots : [],
+      totalPlots: typeof p.totalPlots === 'number' ? p.totalPlots : (Array.isArray(p.plots) ? p.plots.length : 0),
+      availablePlots: typeof p.availablePlots === 'number' ? p.availablePlots : (Array.isArray(p.plots) ? p.plots.filter(x => x.status === 'Available').length : 0),
+      viewBox: p.viewBox || null,
+      width: p.width || null,
+      height: p.height || null,
       description: p.description || '',
     }))
   }, [dbPlots])

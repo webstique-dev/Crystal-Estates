@@ -212,12 +212,17 @@ router.post('/', async (req, res) => {
       mapLocation: (mapLocation || mapUrl || googleMapsUrl || '').trim(),
       mapUrl: (mapUrl || mapLocation || googleMapsUrl || '').trim(),
       googleMapsUrl: (googleMapsUrl || mapLocation || mapUrl || '').trim(),
-      hasLayoutMap: Boolean(hasLayoutMap || layoutBackgroundUrl || layoutPlots.length > 0),
+      hasLayoutMap: Boolean(hasLayoutMap || layoutBackgroundUrl || layoutPlots.length > 0 || (Array.isArray(req.body.layouts) && req.body.layouts.length > 0)),
       layoutSlug: computedSlug,
       layoutBackgroundUrl: layoutBackgroundUrl || null,
+      layouts: Array.isArray(req.body.layouts) ? req.body.layouts : (Array.isArray(req.body.phases) ? req.body.phases : []),
+      phases: Array.isArray(req.body.layouts) ? req.body.layouts : (Array.isArray(req.body.phases) ? req.body.phases : []),
       plots: layoutPlots,
       totalPlots: layoutPlots.length,
       availablePlots: layoutPlots.filter((p) => p.status === 'Available').length,
+      viewBox: req.body.viewBox || null,
+      width: req.body.width || null,
+      height: req.body.height || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -241,6 +246,10 @@ router.post('/', async (req, res) => {
             location: finalLocation,
             layoutBackgroundUrl: layoutBackgroundUrl || null,
             viewBox: req.body.viewBox || '0 0 1056 816',
+            width: req.body.width || 1056,
+            height: req.body.height || 816,
+            layouts: Array.isArray(req.body.layouts) ? req.body.layouts : (Array.isArray(req.body.phases) ? req.body.phases : null),
+            phases: Array.isArray(req.body.layouts) ? req.body.layouts : (Array.isArray(req.body.phases) ? req.body.phases : null),
             updatedAt: new Date(),
           },
         },
@@ -309,6 +318,15 @@ const handlePatchPlot = async (req, res) => {
         if (updates.plots.length > 0) {
           await db.collection(collectionName).insertMany(updates.plots)
         }
+        const existingMeta = await db.collection('layout_metadata').findOne({ slug })
+        const resolvedViewBox =
+          updates.viewBox ||
+          (existingDoc?.viewBox && existingDoc.viewBox !== '0 0 1056 816' ? existingDoc.viewBox : null) ||
+          (existingMeta?.viewBox && existingMeta.viewBox !== '0 0 1056 816' ? existingMeta.viewBox : null) ||
+          existingMeta?.viewBox ||
+          existingDoc?.viewBox ||
+          '0 0 1056 816'
+
         await db.collection('layout_metadata').updateOne(
           { slug },
           {
@@ -318,7 +336,9 @@ const handlePatchPlot = async (req, res) => {
               title: existingDoc?.name || slug,
               location: existingDoc?.location || '',
               layoutBackgroundUrl: updates.layoutBackgroundUrl || existingDoc?.layoutBackgroundUrl || null,
-              viewBox: updates.viewBox || existingDoc?.viewBox || '0 0 1056 816',
+              viewBox: resolvedViewBox,
+              layouts: updates.layouts || existingDoc?.layouts || null,
+              phases: updates.layouts || existingDoc?.layouts || null,
               updatedAt: new Date(),
             },
           },

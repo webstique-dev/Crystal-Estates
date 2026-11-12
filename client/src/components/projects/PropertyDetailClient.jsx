@@ -5,8 +5,6 @@ import Link from 'next/link'
 import {
   MapPin,
   ArrowLeft,
-  FileText,
-  FileCheck2,
   Layers,
   X,
   ChevronLeft,
@@ -62,20 +60,77 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
     .slice(0, 3)
 
   // ─────────────────────────────────────────────────────────────
-  // 1. DYNAMIC SECTION 1: PROJECT LAYOUT DATA
+  // 1. DYNAMIC SECTION 1: PROJECT LAYOUT DATA (SUPPORTS MULTIPLE PHASES)
   // ─────────────────────────────────────────────────────────────
-  const layoutUrl =
+  const rawPhases =
+    Array.isArray(project.layouts) && project.layouts.length > 0
+      ? project.layouts
+      : Array.isArray(project.phases) && project.phases.length > 0
+      ? project.phases
+      : null
+
+  const fallbackLayoutUrl =
     project.layoutBackgroundUrl ||
     project.layoutUrl ||
     project.layoutPlan ||
     project.layoutImage ||
     null
 
-  const hasLayout = Boolean(project.hasLayoutMap || layoutUrl)
-  const isSvgLayout = Boolean(layoutUrl && /\.svg($|\?)/i.test(layoutUrl))
-  const isPdfLayout = Boolean(layoutUrl && /\.pdf($|\?)/i.test(layoutUrl))
+  const layoutPhases = (rawPhases && rawPhases.length > 0)
+    ? rawPhases.map((l, idx) => {
+        const phaseName = (l.name || `Phase ${idx + 1}`).trim()
+        // Ensure phase plots only contain plots belonging to this phase
+        let phasePlots = Array.isArray(l.plots) ? l.plots : []
+        if (phasePlots.length > 0 && phasePlots.some((p) => p.phase)) {
+          phasePlots = phasePlots.filter(
+            (p) => !p.phase || String(p.phase).trim().toLowerCase() === phaseName.toLowerCase()
+          )
+        } else if (phasePlots.length === 0 && Array.isArray(project.plots) && project.plots.length > 0) {
+          // If l.plots is empty, try extracting plots from project.plots matching this phase
+          phasePlots = project.plots.filter(
+            (p) => p.phase && String(p.phase).trim().toLowerCase() === phaseName.toLowerCase()
+          )
+          // If first phase and no plots tagged with phase, only assign if 1 phase
+          if (phasePlots.length === 0 && idx === 0 && rawPhases.length === 1) {
+            phasePlots = project.plots
+          }
+        }
+        return {
+          id: l.id || `phase-${idx + 1}`,
+          name: phaseName,
+          layoutUrl: l.layoutUrl || l.layoutBackgroundUrl || fallbackLayoutUrl,
+          plots: phasePlots,
+          viewBox: l.viewBox || project.viewBox || '0 0 1056 816',
+          width: l.width || project.width || 1056,
+          height: l.height || project.height || 816,
+        }
+      })
+    : [
+        {
+          id: 'phase-1',
+          name: 'Phase 1',
+          layoutUrl: fallbackLayoutUrl,
+          plots: Array.isArray(project.plots) ? project.plots : [],
+          viewBox: project.viewBox || '0 0 1056 816',
+          width: project.width || 1056,
+          height: project.height || 816,
+        },
+      ]
+
+  const [activePhaseIndex, setActivePhaseIndex] = useState(0)
+  const currentPhase = layoutPhases[activePhaseIndex] || layoutPhases[0]
+  const currentPhaseLayoutUrl = currentPhase?.layoutUrl || fallbackLayoutUrl
+  const currentPhasePlots = currentPhase?.plots || []
+
+  const hasLayout = Boolean(
+    project.hasLayoutMap ||
+    fallbackLayoutUrl ||
+    layoutPhases.some((p) => p.layoutUrl || (p.plots && p.plots.length > 0))
+  )
+  const isSvgLayout = Boolean(currentPhaseLayoutUrl && /\.svg($|\?)/i.test(currentPhaseLayoutUrl))
+  const isPdfLayout = Boolean(currentPhaseLayoutUrl && /\.pdf($|\?)/i.test(currentPhaseLayoutUrl))
   const isImageLayout = Boolean(
-    layoutUrl && /\.(png|jpe?g|webp|gif)($|\?)/i.test(layoutUrl)
+    currentPhaseLayoutUrl && /\.(png|jpe?g|webp|gif)($|\?)/i.test(currentPhaseLayoutUrl)
   )
 
   // ─────────────────────────────────────────────────────────────
@@ -463,32 +518,86 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                 </p>
               </div>
 
-              {(project.hasLayoutMap || isSvgLayout || (Array.isArray(project.plots) && project.plots.length > 0)) && layoutUrl ? (
+              {/* Phase Switcher Tabs (Phase-1, Phase-2, etc.) */}
+              {layoutPhases.length > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '22px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--muted)', marginRight: '4px' }}>
+                    Select Phase:
+                  </span>
+                  {layoutPhases.map((phase, idx) => {
+                    const isSelected = idx === activePhaseIndex
+                    const plotCount = (phase.plots || []).length
+                    return (
+                      <button
+                        key={phase.id || idx}
+                        type="button"
+                        onClick={() => setActivePhaseIndex(idx)}
+                        style={{
+                          padding: '8px 18px',
+                          borderRadius: '100px',
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          border: isSelected ? '1.5px solid var(--green-900)' : '1px solid var(--line)',
+                          background: isSelected ? 'var(--green-900)' : '#ffffff',
+                          color: isSelected ? '#ffffff' : 'var(--ink-1)',
+                          boxShadow: isSelected ? '0 2px 8px rgba(15, 61, 46, 0.15)' : 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}
+                      >
+                        <span>{phase.name}</span>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            background: isSelected ? 'rgba(255, 255, 255, 0.22)' : 'var(--bg-soft, #f4f0eb)',
+                            color: isSelected ? '#ffffff' : 'var(--muted)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {plotCount} {plotCount === 1 ? 'Plot' : 'Plots'}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {(project.hasLayoutMap || isSvgLayout || currentPhasePlots.length > 0) && currentPhaseLayoutUrl ? (
                 <div>
                   <PlotViewer
-                    key={project.id || project.layoutSlug || layoutUrl}
-                    initialPlots={Array.isArray(project.plots) && project.plots.length > 0 ? project.plots : null}
-                    fetchUrl={`/api/plots/layout/${project.layoutSlug || project.slug || (project.name ? project.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-') : project.id)}`}
-                    backgroundUrl={layoutUrl}
+                    key={`${project.id || project.slug}-${currentPhase.id || activePhaseIndex}-${currentPhaseLayoutUrl}`}
+                    initialPlots={currentPhasePlots}
+                    phases={layoutPhases}
+                    activePhase={activePhaseIndex}
+                    onPhaseChange={(idx) => setActivePhaseIndex(idx)}
+                    fetchUrl={null}
+                    backgroundUrl={currentPhaseLayoutUrl}
                     metadata={{
-                      title: project.name,
+                      title: `${project.name}${layoutPhases.length > 1 ? ` (${currentPhase.name})` : ''}`,
                       sNo: project.surveyNumber || '',
                       village: project.village || project.location || '',
                       taluk: project.taluk || '',
-                      layoutBackgroundUrl: layoutUrl,
-                      viewBox: project.viewBox || '0 0 1056 816',
+                      layoutBackgroundUrl: currentPhaseLayoutUrl,
+                      viewBox: currentPhase.viewBox || project.viewBox || '0 0 1056 816',
+                      layouts: layoutPhases,
+                      phases: layoutPhases,
                     }}
                     whatsappNumber="919444000000"
                     backHref={`/projects/${project.slug || project.id}`}
                   />
                   <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
                     <Button
-                      href={`/layout-viewer?slug=${project.layoutSlug || project.slug || project.id}`}
+                      href={`/layout-viewer?slug=${project.layoutSlug || project.slug || project.id}&phase=${encodeURIComponent(currentPhase.id || currentPhase.name)}`}
                       variant="outline"
                       size="sm"
                     >
                       <Maximize2 size={14} />
-                      <span>Open Fullscreen Interactive Layout Viewer</span>
+                      <span>Open Fullscreen Interactive Layout Viewer{layoutPhases.length > 1 ? ` (${currentPhase.name})` : ''}</span>
                     </Button>
                   </div>
                 </div>
@@ -513,17 +622,17 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                     }}
                   >
                     <iframe
-                      src={layoutUrl}
-                      title={`${project.name} Blueprint PDF`}
+                      src={currentPhaseLayoutUrl}
+                      title={`${project.name} ${currentPhase.name} Blueprint PDF`}
                       style={{ width: '100%', height: '100%', border: 0 }}
                     />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                     <span style={{ fontSize: '14px', color: 'var(--ink-2)' }}>
-                      <strong>{project.layoutFileName || 'Layout Blueprint (PDF)'}</strong>
+                      <strong>{project.layoutFileName || `${currentPhase.name} Layout Blueprint (PDF)`}</strong>
                     </span>
                     <a
-                      href={layoutUrl}
+                      href={currentPhaseLayoutUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn--primary btn--sm"
@@ -545,14 +654,14 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                     cursor: 'pointer',
                   }}
                   onClick={() => {
-                    const imgToOpen = layoutUrl || project.layoutImage
+                    const imgToOpen = currentPhaseLayoutUrl || project.layoutImage
                     const idx = projectImages.indexOf(imgToOpen)
                     if (idx >= 0) openLightbox(idx)
                   }}
                 >
                   <img
-                    src={layoutUrl || project.layoutImage}
-                    alt={`${project.name} Master Layout Plan`}
+                    src={currentPhaseLayoutUrl || project.layoutImage}
+                    alt={`${project.name} ${currentPhase.name} Layout Plan`}
                     style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '600px', objectFit: 'contain' }}
                   />
                   <div
@@ -573,13 +682,13 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                     <Maximize2 size={13} /> Click to expand blueprint
                   </div>
                 </div>
-              ) : layoutUrl ? (
+              ) : currentPhaseLayoutUrl ? (
                 <div style={{ padding: '24px', background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', textAlign: 'center' }}>
                   <p style={{ fontSize: '14px', color: 'var(--ink-2)', marginBottom: '14px' }}>
-                    Uploaded layout blueprint file (<strong>{project.layoutFileName || 'Blueprint File'}</strong>) is ready for download and viewing.
+                    Uploaded layout blueprint file (<strong>{project.layoutFileName || `${currentPhase.name} Blueprint File`}</strong>) is ready for download and viewing.
                   </p>
                   <a
-                    href={layoutUrl}
+                    href={currentPhaseLayoutUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn--primary btn--sm"
@@ -750,105 +859,8 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
           )}
 
           {/* ═════════════════════════════════════════════════════════════════ */}
-          {/* 3. DOCUMENTS SECTION (FULL WIDTH)                                */}
+          {/* 3. DOCUMENTS SECTION (HIDDEN AS REQUESTED)                        */}
           {/* ═════════════════════════════════════════════════════════════════ */}
-          {hasDocuments && (
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1.5px solid rgba(227, 221, 209, 0.9)',
-                borderRadius: '16px',
-                padding: 'clamp(24px, 3.5vw, 36px)',
-                boxShadow: 'var(--shadow-sm)',
-              }}
-            >
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '6px' }}>
-                  <FileText size={14} />
-                  <span>LEGAL DOCUMENTS &amp; APPROVALS</span>
-                </div>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--green-950)', margin: '0 0 6px 0' }}>
-                  Legal Documents &amp; Approvals
-                </h2>
-                <p style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>
-                  Verified statutory approvals, registration records, and official documentation available for {project.name}.
-                </p>
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                  gap: '14px',
-                }}
-              >
-                {availableDocuments.map((doc, dIdx) => (
-                  <div
-                    key={dIdx}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between',
-                      gap: '14px',
-                      background: 'var(--bg-soft, #fcfaf6)',
-                      border: '1px solid var(--line)',
-                      borderRadius: '12px',
-                      padding: '16px 20px',
-                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-                      <div
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '10px',
-                          background: 'var(--green-50)',
-                          color: 'var(--green-900)',
-                          display: 'grid',
-                          placeItems: 'center',
-                          flexShrink: 0,
-                          marginTop: '2px',
-                        }}
-                      >
-                        <FileCheck2 size={20} color="var(--green-700)" />
-                      </div>
-                      <div>
-                        <strong
-                          style={{
-                            display: 'block',
-                            fontSize: '15px',
-                            color: 'var(--green-950)',
-                            marginBottom: '4px',
-                          }}
-                        >
-                          {doc.title}
-                        </strong>
-                        {doc.desc && (
-                          <span style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: '1.5', display: 'block' }}>
-                            {doc.desc}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {doc.url && (
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn--outline btn--sm"
-                        style={{ flexShrink: 0, alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        <Download size={14} />
-                        <span>{doc.isDownload ? 'Download' : 'View'}</span>
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* ═════════════════════════════════════════════════════════════════ */}
           {/* 4. MAP LOCATION (LEFT) + ENQUIRY FORM (RIGHT) SIDE BY SIDE       */}

@@ -27,11 +27,22 @@ import { useSiteVisits } from './hooks/useSiteVisits'
 /**
  * Wrapper to resolve property data for /properties/edit/:id route
  */
-function EditPropertyRouteWrapper({ properties, onSave, onCancel }) {
+function EditPropertyRouteWrapper({ properties, loading, onSave, onCancel }) {
   const { id } = useParams()
   const property = properties.find((p) => p.id === id || p.projectId === id)
+
+  if (loading && !property) {
+    return (
+      <div className="flex items-center justify-center p-16 text-slate-500 text-xs font-semibold">
+        <div className="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full mr-3" />
+        Loading property specifications...
+      </div>
+    )
+  }
+
   return (
     <AddEditPropertyPage
+      key={property?.id || id}
       initialData={property}
       onSave={onSave}
       onCancel={onCancel}
@@ -63,6 +74,7 @@ export default function App() {
     totalCount,
     searchTerm,
     setSearchTerm,
+    loading: propertiesLoading,
     addPlot,
     updatePlotState,
     deleteProperty,
@@ -318,6 +330,8 @@ export default function App() {
                 properties={properties}
                 onEdit={(prop) => navigate(`/properties/edit/${prop.id}`)}
                 onDelete={handleDelete}
+                onPropertyUpdated={updatePlotState}
+                onShowToast={showToast}
                 searchTerm={searchTerm}
                 onClearSearch={() => setSearchTerm('')}
               />
@@ -342,6 +356,7 @@ export default function App() {
             element={
               <EditPropertyRouteWrapper
                 properties={properties}
+                loading={propertiesLoading}
                 onSave={handleSaveProperty}
                 onCancel={() => navigate('/properties')}
               />

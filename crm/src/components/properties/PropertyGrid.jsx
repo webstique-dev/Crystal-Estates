@@ -1,8 +1,19 @@
-import React from 'react'
+import React, { useState } from 'react'
 import PropertyCard from './PropertyCard'
+import PropertyPlotModal from './PropertyPlotModal'
 import { Building2, SearchX } from 'lucide-react'
 
-export default function PropertyGrid({ properties = [], onEdit, onDelete, searchTerm, onClearSearch }) {
+export default function PropertyGrid({
+  properties = [],
+  onEdit,
+  onDelete,
+  onPropertyUpdated,
+  onShowToast,
+  searchTerm,
+  onClearSearch,
+}) {
+  const [plotModalProperty, setPlotModalProperty] = useState(null)
+
   if (properties.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center max-w-md mx-auto my-12 shadow-xs">
@@ -27,16 +38,33 @@ export default function PropertyGrid({ properties = [], onEdit, onDelete, search
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {properties.map((property) => (
-        <PropertyCard
-          key={property.id}
-          property={property}
-          onEdit={onEdit}
-          onDelete={onDelete}
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {properties.map((property) => (
+          <PropertyCard
+            key={property.id}
+            property={property}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAddPlot={(prop) => setPlotModalProperty(prop)}
+          />
+        ))}
+      </div>
+
+      {plotModalProperty && (
+        <PropertyPlotModal
+          isOpen={Boolean(plotModalProperty)}
+          property={plotModalProperty}
+          onClose={() => setPlotModalProperty(null)}
+          onPropertyUpdated={(updated) => {
+            if (onPropertyUpdated) onPropertyUpdated(updated)
+            setPlotModalProperty(updated)
+          }}
+          onShowToast={onShowToast}
         />
-      ))}
-    </div>
+      )}
+    </>
   )
 }
+
 
