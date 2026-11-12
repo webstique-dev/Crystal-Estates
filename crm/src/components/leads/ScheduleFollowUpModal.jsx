@@ -76,13 +76,18 @@ function formatCustomDateTime(dateStr, timeStr) {
 
   let formattedTime = '11:00 am'
   if (timeStr) {
-    const [hStr, mStr] = timeStr.split(':')
-    const h = parseInt(hStr, 10)
-    const m = parseInt(mStr || '0', 10)
-    const period = h >= 12 ? 'pm' : 'am'
-    const displayH = h % 12 === 0 ? 12 : h % 12
-    const displayM = String(m).padStart(2, '0')
-    formattedTime = `${displayH}:${displayM} ${period}`
+    const trimmed = timeStr.trim()
+    if (/\b(am|pm)\b/i.test(trimmed)) {
+      formattedTime = trimmed.replace(/^0/, '').toLowerCase()
+    } else {
+      const [hStr, mStr] = trimmed.split(':')
+      const h = parseInt(hStr, 10)
+      const m = parseInt(mStr || '0', 10)
+      const period = h >= 12 ? 'pm' : 'am'
+      const displayH = h % 12 === 0 ? 12 : h % 12
+      const displayM = String(m).padStart(2, '0')
+      formattedTime = `${displayH}:${displayM} ${period}`
+    }
   }
 
   if (diffDays === 0) {
@@ -106,12 +111,13 @@ export default function ScheduleFollowUpModal({
   isOpen,
   lead,
   leads = [],
+  defaultWhen = 'Tomorrow, 11:00 am',
   onClose,
   onSchedule,
 }) {
   const [selectedLeadId, setSelectedLeadId] = useState(lead?.id || leads[0]?.id || '')
   const [type, setType] = useState('Call')
-  const [when, setWhen] = useState('Tomorrow, 11:00 am')
+  const [when, setWhen] = useState(defaultWhen)
   const [customDate, setCustomDate] = useState(getTomorrowDateString())
   const [customTime, setCustomTime] = useState('11:00 AM')
   const [note, setNote] = useState('')
@@ -128,11 +134,12 @@ export default function ScheduleFollowUpModal({
 
   React.useEffect(() => {
     if (isOpen) {
-      setWhen('Tomorrow, 11:00 am')
+      setWhen(defaultWhen || 'Tomorrow, 11:00 am')
       setCustomDate(getTomorrowDateString())
       setCustomTime('11:00 AM')
+      setNote('')
     }
-  }, [isOpen])
+  }, [isOpen, defaultWhen])
 
   if (!isOpen) return null
 

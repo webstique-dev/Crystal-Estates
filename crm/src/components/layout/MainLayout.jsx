@@ -9,6 +9,7 @@ export default function MainLayout({
   onOpenUpload,
   onAddLead,
   onNewFollowUp,
+  onScheduleVisit,
   onSimulateEnquiry,
   isSimulating = false,
   headerTitle,
@@ -43,6 +44,7 @@ export default function MainLayout({
           onOpenUpload={onOpenUpload}
           onAddLead={onAddLead}
           onNewFollowUp={onNewFollowUp}
+          onScheduleVisit={onScheduleVisit}
           onSimulateEnquiry={onSimulateEnquiry}
           isSimulating={isSimulating}
           notificationCount={notificationCount}

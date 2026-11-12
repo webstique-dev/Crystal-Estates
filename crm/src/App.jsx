@@ -14,6 +14,7 @@ import DashboardView from './components/dashboard/DashboardView'
 import LeadsPipelineView from './components/leads/LeadsPipelineView'
 import PlaceholderView from './components/views/PlaceholderView'
 import FollowUpsView from './components/followups/FollowUpsView'
+import SiteVisitsView from './components/visits/SiteVisitsView'
 import ScheduleFollowUpModal from './components/leads/ScheduleFollowUpModal'
 import LoginPage from './components/auth/LoginPage'
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
@@ -21,6 +22,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import Toast from './components/common/Toast'
 import { useProperties } from './hooks/useProperties'
 import { useLeads } from './hooks/useLeads'
+import { useSiteVisits } from './hooks/useSiteVisits'
 
 /**
  * Wrapper to resolve property data for /properties/edit/:id route
@@ -52,6 +54,7 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false)
   const [isNewFollowUpModalOpen, setIsNewFollowUpModalOpen] = useState(false)
+  const [isScheduleVisitModalOpen, setIsScheduleVisitModalOpen] = useState(false)
   const [isSimulatingLead, setIsSimulatingLead] = useState(false)
 
   // Centralized hook managing live MongoDB plots & actual portfolio
@@ -67,6 +70,9 @@ export default function App() {
 
   // Centralized hook managing live MongoDB leads pipeline
   const leadsState = useLeads()
+
+  // Centralized hook managing live MongoDB site visits
+  const visitsState = useSiteVisits()
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })
@@ -168,8 +174,8 @@ export default function App() {
         }
       case 'visits':
         return {
-          title: 'Site Visits',
-          subtitle: 'Guided on-ground layout visits, transport & survey inspections',
+          title: 'Site visits',
+          subtitle: 'Scheduled visits with cab pickup',
         }
       case 'management':
         return {
@@ -290,6 +296,7 @@ export default function App() {
         onOpenUpload={() => navigate('/properties/add')}
         onAddLead={() => setIsAddLeadModalOpen(true)}
         onNewFollowUp={() => setIsNewFollowUpModalOpen(true)}
+        onScheduleVisit={() => setIsScheduleVisitModalOpen(true)}
         onSimulateEnquiry={handleSimulateEnquiry}
         isSimulating={isSimulatingLead}
         headerTitle={headerTitle}
@@ -347,6 +354,7 @@ export default function App() {
             element={
               <LeadsPipelineView
                 leadsState={leadsState}
+                visitsState={visitsState}
                 properties={properties}
                 isAddModalOpen={isAddLeadModalOpen}
                 setIsAddModalOpen={setIsAddLeadModalOpen}
@@ -361,6 +369,21 @@ export default function App() {
             element={
               <FollowUpsView
                 leadsState={leadsState}
+                onShowToast={showToast}
+              />
+            }
+          />
+
+          {/* Site Visits Workspace */}
+          <Route
+            path="/visits"
+            element={
+              <SiteVisitsView
+                visitsState={visitsState}
+                leadsState={leadsState}
+                properties={properties}
+                isScheduleModalOpen={isScheduleVisitModalOpen}
+                setIsScheduleModalOpen={setIsScheduleVisitModalOpen}
                 onShowToast={showToast}
               />
             }

@@ -3,6 +3,9 @@ import { ChevronDown } from 'lucide-react'
 import LeadColumn from './LeadColumn'
 import AddLeadModal from './AddLeadModal'
 import LeadDrawer from './LeadDrawer'
+import ScheduleFollowUpModal from './ScheduleFollowUpModal'
+import ScheduleSiteVisitModal from '../visits/ScheduleSiteVisitModal'
+import { createSiteVisit } from '../../lib/api'
 
 const PIPELINE_STAGES = [
   {
@@ -32,6 +35,13 @@ const PIPELINE_STAGES = [
     color: '#7C3AED',
     badgeBg: '#EDE9FE',
     badgeColor: '#6D28D9',
+  },
+  {
+    id: 'sitevisitdone',
+    label: 'Site visit done',
+    color: '#0891B2',
+    badgeBg: '#CFFAFE',
+    badgeColor: '#0E7490',
   },
   {
     id: 'negotiation',
@@ -71,6 +81,7 @@ const DEFAULT_SOURCES = [
 
 export default function LeadsPipelineView({
   leadsState,
+  visitsState,
   properties = [],
   isAddModalOpen = false,
   setIsAddModalOpen,
@@ -83,6 +94,7 @@ export default function LeadsPipelineView({
     addNewLead,
     updateLeadDetails,
     removeLead,
+    refreshLeads,
     selectedSource,
     setSelectedSource,
     selectedAgent,
@@ -92,6 +104,8 @@ export default function LeadsPipelineView({
 
   const [addModalStage, setAddModalStage] = useState('new')
   const [selectedLead, setSelectedLead] = useState(null)
+  const [followUpDropLead, setFollowUpDropLead] = useState(null)
+  const [siteVisitDropLead, setSiteVisitDropLead] = useState(null)
 
   // Dynamic source tabs
   const sourceTabs = useMemo(() => {
@@ -120,7 +134,31 @@ export default function LeadsPipelineView({
   // Drag and drop handler
   const handleDropLead = async (targetStageId, leadId) => {
     try {
+      const lead = allLeads.find((l) => l.id === leadId)
+      const currentStage = (lead?.stage || '').toLowerCase().replace(/\s+/g, '')
+
+      if (currentStage === targetStageId) return
+
+      // When dropped into Follow-up column, open the Schedule Follow-up modal first.
+      // Only move the card to Follow-up if the user actually schedules the follow-up.
+      if (targetStageId === 'followup' && lead) {
+        setFollowUpDropLead(lead)
+        return
+      }
+
+      // When dropped into Site visit column, open the Schedule Site Visit modal first.
+      // Only move the card to Site visit if the user actually schedules the visit.
+      if (targetStageId === 'sitevisit' && lead) {
+        setSiteVisitDropLead(lead)
+        return
+      }
+
       await moveLeadStage(leadId, targetStageId)
+
+      if (targetStageId === 'sitevisitdone' && visitsState?.refreshVisits) {
+        await visitsState.refreshVisits()
+      }
+
       const stageLabel =
         PIPELINE_STAGES.find((s) => s.id === targetStageId)?.label || targetStageId
       if (onShowToast) {
@@ -234,6 +272,59 @@ export default function LeadsPipelineView({
           onScheduleFollowUp={leadsState.scheduleFollowUp}
           onToggleFollowUp={leadsState.toggleFollowUp}
           onAddNote={leadsState.addNote}
+        />
+      )}
+
+      {followUpDropLead && (
+        <ScheduleFollowUpModal
+          isOpen={Boolean(followUpDropLead)}
+          lead={followUpDropLead}
+          defaultWhen="Custom Date & Time"
+          onClose={() => setFollowUpDropLead(null)}
+          onSchedule={async ({ leadId, type, when, note }) => {
+            try {
+              await moveLeadStage(leadId, 'followup')
+              await leadsState.scheduleFollowUp(leadId, { type, when, note })
+              if (onShowToast) {
+                onShowToast(
+                  `Lead moved to "Follow-up" & scheduled for ${when}`,
+                  'success'
+                )
+              }
+            } catch (err) {
+              if (onShowToast) onShowToast(err.message, 'error')
+              throw err
+            }
+          }}
+        />
+      )}
+
+      {siteVisitDropLead && (
+        <ScheduleSiteVisitModal
+          isOpen={Boolean(siteVisitDropLead)}
+          lead={siteVisitDropLead}
+          properties={properties}
+          meta={meta}
+          onClose={() => setSiteVisitDropLead(null)}
+          onSchedule={async (visitData) => {
+            try {
+              const res = visitsState?.scheduleVisit
+                ? await visitsState.scheduleVisit(visitData)
+                : await createSiteVisit(visitData)
+              if (refreshLeads) await refreshLeads()
+              const dateLabel = res?.visit?.dateLabel || visitData.date
+              const timeLabel = res?.visit?.visitTime || visitData.time
+              if (onShowToast) {
+                onShowToast(
+                  `Lead moved to "Site visit" & scheduled for ${dateLabel}, ${timeLabel}`,
+                  'success'
+                )
+              }
+            } catch (err) {
+              if (onShowToast) onShowToast(err.message, 'error')
+              throw err
+            }
+          }}
         />
       )}
     </div>

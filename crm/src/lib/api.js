@@ -439,3 +439,53 @@ export async function deleteLayoutPlot(slug, plotNo) {
   return await res.json()
 }
 
+/**
+ * Site Visits APIs
+ */
+export async function fetchSiteVisits() {
+  const res = await fetch(getApiUrl('/api/visits'))
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to load site visits: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+export async function createSiteVisit(visitData) {
+  const res = await fetch(getApiUrl('/api/visits'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(visitData),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to schedule site visit: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+export async function updateSiteVisit(id, updates) {
+  const res = await fetch(getApiUrl(`/api/visits/${id}`), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to update site visit: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+export async function deleteSiteVisit(id) {
+  const res = await fetch(getApiUrl(`/api/visits/${id}`), {
+    method: 'DELETE',
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Failed to delete site visit: HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+

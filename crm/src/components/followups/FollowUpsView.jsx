@@ -86,6 +86,15 @@ function parseDueDisplay(whenStr = '') {
     }
   }
 
+  if (lower.includes('in 2 days') || lower.includes('weekend') || lower.includes('next week')) {
+    const parts = raw.split(/[,·-]/).map((s) => s.trim()).filter(Boolean)
+    return {
+      status: 'upcoming',
+      day: parts[0] || raw,
+      time: time || '11:00 am',
+    }
+  }
+
   // Look for dates like "17 Oct", "18 Oct", "25 Nov"
   const dateRegex = /\b(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*)\b/i
   const dateMatch = raw.match(dateRegex)

@@ -13,6 +13,7 @@ export default function Header({
   onOpenUpload,
   onAddLead,
   onNewFollowUp,
+  onScheduleVisit,
   onSimulateEnquiry,
   isSimulating = false,
   notificationCount = 3,
@@ -73,6 +74,18 @@ export default function Header({
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New follow-up</span>
+          </button>
+        )}
+
+        {/* ── SITE VISITS ACTIONS ── */}
+        {!isAddOrEditPage && activeNav === 'visits' && onScheduleVisit && (
+          <button
+            type="button"
+            onClick={onScheduleVisit}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0B57D0] hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition active:scale-[0.98]"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Schedule visit</span>
           </button>
         )}
 

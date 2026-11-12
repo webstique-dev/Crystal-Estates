@@ -22,6 +22,7 @@ const STAGE_OPTIONS = [
   { id: 'contacted', label: 'Contacted' },
   { id: 'followup', label: 'Follow-up' },
   { id: 'sitevisit', label: 'Site visit' },
+  { id: 'sitevisitdone', label: 'Site visit done' },
   { id: 'negotiation', label: 'Negotiation' },
   { id: 'won', label: 'Won - Booked' },
   { id: 'lost', label: 'Lost' },

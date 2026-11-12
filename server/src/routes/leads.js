@@ -98,6 +98,7 @@ router.get('/meta', async (req, res) => {
         { id: 'contacted', label: 'Contacted' },
         { id: 'followup', label: 'Follow-up' },
         { id: 'sitevisit', label: 'Site visit' },
+        { id: 'sitevisitdone', label: 'Site visit done' },
         { id: 'negotiation', label: 'Negotiation' },
         { id: 'won', label: 'Won - Booked' },
         { id: 'lost', label: 'Lost' },
@@ -648,6 +649,7 @@ router.patch('/:id', async (req, res) => {
         contacted: 'Contacted',
         followup: 'Follow-up',
         sitevisit: 'Site visit',
+        sitevisitdone: 'Site visit done',
         negotiation: 'Negotiation',
         won: 'Won - Booked',
         lost: 'Lost',
@@ -658,6 +660,14 @@ router.patch('/:id', async (req, res) => {
         time: 'Just now',
         createdAt: new Date(),
       })
+
+      // If moved to "Site visit done", mark any active site_visits for this lead as Completed
+      if (updates.stage === 'sitevisitdone') {
+        await db.collection('site_visits').updateMany(
+          { leadId: id, status: { $ne: 'Completed' } },
+          { $set: { status: 'Completed', updatedAt: new Date() } }
+        )
+      }
     }
 
     // Assigned Agent tracking

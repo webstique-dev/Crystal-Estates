@@ -8,6 +8,7 @@ import kolapakkamRouter from './routes/kolapakkam.js'
 import uploadRouter from './routes/upload.js'
 import layoutRouter from './routes/layout.js'
 import leadsRouter from './routes/leads.js'
+import visitsRouter from './routes/visits.js'
 import authRouter from './routes/auth.js'
 import { getDb, closeDb } from './config/db.js'
 
@@ -136,6 +137,7 @@ app.use('/api/plots', layoutRouter)
 app.use('/api/plots/kolapakkam', kolapakkamRouter)
 app.use('/api/plots', plotsRouter)
 app.use('/api/leads', leadsRouter)
+app.use('/api/visits', visitsRouter)
 app.use('/api/auth', authRouter)
 
 // Direct website enquiry endpoint saving into leads collection under "new" stage
