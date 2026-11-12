@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import multer from 'multer'
+import { Binary } from 'mongodb'
 import { getDb } from '../config/db.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -137,6 +138,35 @@ router.post('/image', upload.single('image'), async (req, res) => {
     const filename = `plot-${safeBase}-${timestamp}${ext}`
 
     saveToDirs([clientImagesDir, crmImagesDir, serverUploadsImagesDir], filename, buffer)
+
+    // Also persist image in MongoDB Atlas for permanent cloud serving across Render & Vercel
+    try {
+      const db = await getDb()
+      const contentType =
+        ext === '.png'
+          ? 'image/png'
+          : ext === '.svg'
+          ? 'image/svg+xml'
+          : ext === '.webp'
+          ? 'image/webp'
+          : 'image/jpeg'
+      await db.collection('uploaded_files').updateOne(
+        { filename },
+        {
+          $set: {
+            filename,
+            contentType,
+            binaryData: new Binary(buffer),
+            size: buffer.length,
+            updatedAt: new Date(),
+          },
+          $setOnInsert: { createdAt: new Date() },
+        },
+        { upsert: true }
+      )
+    } catch (dbErr) {
+      console.warn('MongoDB uploaded_files caching warning:', dbErr.message)
+    }
 
     const publicUrl = `/images/plots/${filename}`
 

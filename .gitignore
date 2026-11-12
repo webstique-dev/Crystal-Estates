@@ -6,7 +6,7 @@ crm/node_modules/
 
 # Uploads
 server/uploads/
-client/public/images/plots/
+
 
 # Next.js / Vite Build Outputs
 .next/

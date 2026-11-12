@@ -93,10 +93,39 @@ app.use((req, res, next) => {
 // Serve static layout SVGs, plot images, documents and videos (checks server/uploads first, falls back to client/public)
 const uploadsDir = path.join(__dirname, '../uploads')
 app.use('/plots', express.static(path.join(uploadsDir, 'plots')), express.static(path.join(rootDir, 'client/public/plots')))
+app.use('/images/plots', express.static(path.join(uploadsDir, 'images')), express.static(path.join(rootDir, 'client/public/images/plots')))
 app.use('/images', express.static(path.join(uploadsDir, 'images')), express.static(path.join(rootDir, 'client/public/images')))
 app.use('/documents', express.static(path.join(uploadsDir, 'documents')), express.static(path.join(rootDir, 'client/public/documents')))
 app.use('/videos', express.static(path.join(uploadsDir, 'videos')), express.static(path.join(rootDir, 'client/public/videos')))
 app.use('/uploads', express.static(uploadsDir))
+
+// MongoDB persistent streaming fallback for uploaded images, layout SVGs, and documents (critical for Render / Vercel cloud deploys)
+app.get(
+  ['/images/plots/:filename', '/images/:filename', '/plots/:filename', '/documents/:filename'],
+  async (req, res, next) => {
+    try {
+      const filename = req.params.filename
+      const db = await getDb()
+      const fileDoc = await db.collection('uploaded_files').findOne({ filename })
+      if (fileDoc) {
+        let buffer = null
+        if (fileDoc.binaryData) {
+          buffer = fileDoc.binaryData.buffer || fileDoc.binaryData
+        } else if (fileDoc.data) {
+          buffer = Buffer.from(fileDoc.data, 'base64')
+        }
+        if (buffer) {
+          res.set('Content-Type', fileDoc.contentType || 'application/octet-stream')
+          res.set('Cache-Control', 'public, max-age=31536000, immutable')
+          return res.send(buffer)
+        }
+      }
+    } catch (e) {
+      console.warn('MongoDB file streaming fallback warning:', e.message)
+    }
+    next()
+  }
+)
 
 // Root & Health check
 app.get('/', (req, res) => {

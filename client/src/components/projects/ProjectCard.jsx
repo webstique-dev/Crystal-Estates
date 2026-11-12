@@ -32,6 +32,25 @@ export function ProjectCard({ project, className = '' }) {
     setImgSrc(primaryImage)
   }, [primaryImage])
 
+  const handleImageError = () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    // If it was a relative path starting with /images/plots/, try fetching directly from API server
+    if (imgSrc && typeof imgSrc === 'string' && imgSrc.startsWith('/images/plots/') && !imgSrc.startsWith('http')) {
+      const fullUrl = `${apiUrl.replace(/\/$/, '')}${imgSrc}`
+      if (imgSrc !== fullUrl) {
+        setImgSrc(fullUrl)
+        return
+      }
+    }
+    // Specific project fallback before generic hero-estate
+    const slugImage = project?.slug ? `/images/${project.slug}.jpg` : null
+    if (slugImage && imgSrc !== slugImage && imgSrc !== fallbackImage) {
+      setImgSrc(slugImage)
+      return
+    }
+    setImgSrc(fallbackImage)
+  }
+
   const projectSlug = project.slug || project.id || project.projectId
 
   // Format Area display
@@ -77,7 +96,7 @@ export function ProjectCard({ project, className = '' }) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="project-card__image"
           loading="lazy"
-          onError={() => setImgSrc(fallbackImage)}
+          onError={handleImageError}
         />
       </div>
 

@@ -29,6 +29,10 @@ const nextConfig = {
         source: '/uploads/:path*',
         destination: `${serverUrl}/uploads/:path*`,
       },
+      {
+        source: '/images/plots/:path*',
+        destination: `${serverUrl}/images/plots/:path*`,
+      },
     ]
   },
 }

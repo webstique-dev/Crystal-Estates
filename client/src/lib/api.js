@@ -156,9 +156,11 @@ export function normalizePlot(plot) {
   ].filter((img) => typeof img === 'string' && img.trim().length > 0)
 
   const images = Array.from(new Set(rawImages))
+  const slugFallback = slug ? `/images/${slug}.jpg` : null
+  const defaultFallback = '/images/hero-estate.jpg'
   const primaryImage =
     plot.image ||
-    (images.length > 0 ? images[0] : '/images/hero-estate.jpg')
+    (images.length > 0 ? images[0] : (slugFallback || defaultFallback))
 
   // Videos (support both string URLs and uploaded video objects { name, url, size })
   const rawVideos = []
