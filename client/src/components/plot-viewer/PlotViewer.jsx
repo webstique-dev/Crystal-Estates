@@ -100,10 +100,11 @@ export default function PlotViewer({
   const [isFullscreen, setIsFullscreen] = useState(false)
   const viewerRef = useRef(null)
   const containerRef = useRef(null)
+  const tooltipRef = useRef(null)
 
   // Hover Tooltip state
   const [hoveredPlot, setHoveredPlot] = useState(null)
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0, flipBelow: false })
 
   // Selected Plot Modal state
   const [selectedPlot, setSelectedPlot] = useState(null)
@@ -265,6 +266,43 @@ export default function PlotViewer({
     panStartRef.current = { ...pan }
   }
 
+  // Smart tooltip positioning: clamps inside canvas bounds & flips below when near top
+  const updateTooltipPosition = (clientX, clientY) => {
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const mouseX = clientX - rect.left
+    const mouseY = clientY - rect.top
+
+    const tipW = tooltipRef.current?.offsetWidth || 210
+    const tipH = tooltipRef.current?.offsetHeight || 165
+    const halfW = tipW / 2
+    const gap = 16
+
+    // Flip below if cursor is too close to top edge of the canvas viewport
+    const flipBelow = mouseY < tipH + gap + 20
+
+    // Clamp X so tooltip never clips left or right edge of the container
+    const clampedX = Math.max(halfW + 12, Math.min(rect.width - halfW - 12, mouseX))
+
+    // Clamp Y to prevent clipping at bottom if flipped below or top if flipped above
+    let clampedY = mouseY
+    if (flipBelow) {
+      if (mouseY + gap + tipH > rect.height - 12) {
+        clampedY = Math.max(0, rect.height - tipH - gap - 12)
+      }
+    } else {
+      if (mouseY - gap - tipH < 12) {
+        clampedY = tipH + gap + 12
+      }
+    }
+
+    setTooltipPos({
+      x: clampedX,
+      y: clampedY,
+      flipBelow,
+    })
+  }
+
   const handleMouseMove = (e) => {
     if (isDragging) {
       const dx = e.clientX - dragStartRef.current.x
@@ -275,13 +313,7 @@ export default function PlotViewer({
       })
     }
 
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect()
-      setTooltipPos({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      })
-    }
+    updateTooltipPosition(e.clientX, e.clientY)
   }
 
   const handleMouseUp = () => {
@@ -582,7 +614,13 @@ export default function PlotViewer({
                     key={plot.id || plot.plotNo}
                     id={`plot-group-${plot.plotNo}`}
                     className={`pv-plot pv-plot--${plot.status} ${isSelected ? 'pv-plot--selected' : ''} ${!isMatch ? 'pv-plot--dimmed' : ''}`}
-                    onMouseEnter={() => setHoveredPlot(plot)}
+                    onMouseEnter={(e) => {
+                      updateTooltipPosition(e.clientX, e.clientY)
+                      setHoveredPlot(plot)
+                    }}
+                    onMouseMove={(e) => {
+                      updateTooltipPosition(e.clientX, e.clientY)
+                    }}
                     onMouseLeave={() => setHoveredPlot(null)}
                     onClick={(e) => {
                       e.stopPropagation()
@@ -706,7 +744,8 @@ export default function PlotViewer({
         {/* ── Hover Tooltip Card ── */}
         {hoveredPlot && !isDragging && (
           <div
-            className="pv-tooltip"
+            ref={tooltipRef}
+            className={`pv-tooltip ${tooltipPos.flipBelow ? 'pv-tooltip--bottom' : ''}`}
             style={{
               left: tooltipPos.x,
               top: tooltipPos.y,

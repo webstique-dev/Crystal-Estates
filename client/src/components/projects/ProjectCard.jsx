@@ -84,6 +84,14 @@ export function ProjectCard({ project, className = '' }) {
   const propStatus = project.status || project.badge || 'Available'
   const propTitle = project.name || project.projectName || 'Crystal Estates Property'
 
+  const statusStr = String(propStatus || '').trim().toLowerCase()
+  const isSoldOut =
+    statusStr === 'sold' ||
+    statusStr === 'sold out' ||
+    statusStr === 'soldout' ||
+    Boolean(project.isSoldOut) ||
+    (typeof project.availablePlots === 'number' && project.availablePlots === 0 && (project.totalPlots > 0 || (Array.isArray(project.plots) && project.plots.length > 0)))
+
   return (
     <article className={`project-card ${isFlagship ? 'project-card--flagship' : ''} ${className}`.trim()}>
       {/* 1. Pure Clean Image Container (No overlays, no text, no badges on the image) */}
@@ -156,10 +164,21 @@ export function ProjectCard({ project, className = '' }) {
             <span>{project.approval || project.approvalStatus || '100% Clear Title Patta'}</span>
           </div>
 
-          <Button href={`/projects/${projectSlug}`} variant="outline" size="sm" className="project-card__cta">
-            <span>View Details</span>
-            <ArrowRight size={14} />
-          </Button>
+          {isSoldOut ? (
+            <Button
+              href={`/projects/${projectSlug}`}
+              variant="outline"
+              size="sm"
+              className="project-card__cta project-card__cta--soldout"
+            >
+              <span>Sold Out</span>
+            </Button>
+          ) : (
+            <Button href={`/projects/${projectSlug}`} variant="outline" size="sm" className="project-card__cta">
+              <span>View Details</span>
+              <ArrowRight size={14} />
+            </Button>
+          )}
         </div>
       </div>
     </article>

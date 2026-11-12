@@ -4922,6 +4922,8 @@ input, select, textarea {
   border-color: rgba(27, 94, 70, 0.2);
 }
 
+.project-card__status-pill--sold,
+.project-card__status-pill--soldout,
 .project-card__status-pill--sold-out {
   background: #fef2f2;
   color: #dc2626;
@@ -5001,6 +5003,19 @@ input, select, textarea {
   font-size: 12px;
   color: var(--green-700, #0f3d2e);
   font-weight: 600;
+}
+
+.project-card__cta--soldout {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border-color: rgba(220, 38, 38, 0.4) !important;
+  font-weight: 700 !important;
+}
+
+.project-card__cta--soldout:hover {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #dc2626 !important;
 }
 
 /* ── Projects Catalog Filter Bar (Responsive Grid & Styled Controls) ── */

@@ -454,7 +454,7 @@ export default function PropertyDetailClient({ initialProject, staticAllProjects
                   <strong
                     style={{
                       fontSize: '15px',
-                      color: project.status === 'Sold Out' ? '#dc2626' : 'var(--green-600)',
+                      color: (project.status === 'Sold Out' || project.status === 'Sold') ? '#dc2626' : 'var(--green-600)',
                     }}
                   >
                     {project.status}
