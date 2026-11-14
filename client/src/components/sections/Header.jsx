@@ -11,22 +11,43 @@ import { mainNav } from '../../config/navigation'
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
+  const [inHero, setInHero] = useState(true)
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
-  // Track scroll position for sticky styling
+  const isHome = pathname === '/'
+
+  // Track scroll position: transparent within hero section, solid/scrolled past hero
   useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 20)
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+
+      if (isHome) {
+        const heroEl = document.getElementById('home')
+        const rawHeight = heroEl?.offsetHeight || 0
+        const winHeight = typeof window !== 'undefined' ? window.innerHeight : 800
+        const heroHeight = rawHeight > 200 ? rawHeight : winHeight
+        const insideHero = scrollY < (heroHeight - 80)
+        // Transparent strictly within hero section
+        setInHero(insideHero)
+        setScrolled(!insideHero && scrollY > 20)
+      } else {
+        setInHero(false)
+        setScrolled(scrollY > 20)
+      }
     }
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleScroll)
+    }
+  }, [isHome])
 
   // Close mobile drawer on route change
   useEffect(() => {
-    // Closes mobile menu on route changes
     const timer = setTimeout(() => {
       setOpen(false)
     }, 0)
@@ -63,8 +84,15 @@ export default function Header() {
     return pathname === href || pathname?.startsWith(`${href}/`)
   }
 
+  // Determine header classes
+  const headerClasses = [
+    'header',
+    inHero ? 'header--in-hero' : '',
+    scrolled ? 'header--scrolled' : '',
+  ].filter(Boolean).join(' ')
+
   return (
-    <header className={`header ${scrolled ? 'header--scrolled' : ''}`}>
+    <header className={headerClasses}>
       <Container className="header__container">
         {/* Brand Logo with "ASSETS CREATOR" below */}
         <Link href="/" className="header__brand" onClick={() => setOpen(false)} aria-label="Crystal Estates - ASSETS CREATOR">
@@ -100,21 +128,21 @@ export default function Header() {
                 className={`header__nav-link ${active ? 'header__nav-link--active' : ''}`}
                 aria-current={active ? 'page' : undefined}
               >
-                {item.label}
+                <span>{item.label}</span>
               </Link>
             )
           })}
         </nav>
 
-        {/* Right Actions: Enquire Now Button & Mobile Hamburger */}
+        {/* Right Actions: Enquire Now & Mobile Hamburger */}
         <div className="header__actions">
           <Link
             href="/contact"
             className="header__enquire-btn"
             onClick={() => setOpen(false)}
           >
-            <span>Enquire Now</span>
-            <ArrowUpRight size={15} />
+            <span>Enquire</span>
+            <ArrowUpRight size={14} />
           </Link>
 
           <button
@@ -158,7 +186,6 @@ export default function Header() {
                   key={item.label}
                   href={item.href}
                   className={`header__drawer-link ${active ? 'header__drawer-link--active' : ''}`}
-                  aria-current={active ? 'page' : undefined}
                   onClick={() => setOpen(false)}
                 >
                   <span>{item.label}</span>
@@ -166,15 +193,6 @@ export default function Header() {
                 </Link>
               )
             })}
-            <Link
-              href="/sell-your-land"
-              className={`header__drawer-link ${pathname === '/sell-your-land' ? 'header__drawer-link--active' : ''}`}
-              aria-current={pathname === '/sell-your-land' ? 'page' : undefined}
-              onClick={() => setOpen(false)}
-            >
-              <span>Sell Your Land</span>
-              {pathname === '/sell-your-land' && <span className="header__drawer-dot" />}
-            </Link>
           </div>
 
           <div className="header__drawer-cta">

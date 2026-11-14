@@ -1,8 +1,16 @@
-import { Montserrat, Playfair_Display } from 'next/font/google'
+import { Manrope, Montserrat, Playfair_Display } from 'next/font/google'
 import Header from '../components/sections/Header'
 import Footer from '../components/sections/Footer'
 import SiteVisitPopup from '../components/ui/SiteVisitPopup'
+import SmoothScroll from '../components/providers/SmoothScroll'
 import '../index.css'
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-manrope',
+  display: 'swap',
+})
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -13,7 +21,8 @@ const montserrat = Montserrat({
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700', '800'],
+  style: ['normal', 'italic'],
   variable: '--font-playfair',
   display: 'swap',
 })
@@ -167,7 +176,7 @@ const realEstateAgentJsonLd = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${playfair.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${montserrat.variable} ${playfair.variable}`}>
       <head>
         <script
           type="application/ld+json"
@@ -175,10 +184,12 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        <Header />
-        {children}
-        <Footer />
-        <SiteVisitPopup />
+        <SmoothScroll>
+          <Header />
+          {children}
+          <Footer />
+          <SiteVisitPopup />
+        </SmoothScroll>
       </body>
     </html>
   )
