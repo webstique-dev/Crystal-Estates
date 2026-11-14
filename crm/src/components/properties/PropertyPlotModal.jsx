@@ -557,7 +557,7 @@ export default function PropertyPlotModal({
                       className="absolute inset-0 w-full h-full pointer-events-auto"
                       style={{ overflow: 'visible' }}
                     >
-                      {plots.map((p) => {
+                      {plots.filter((p) => p.svgPath && p.svgPath.trim()).map((p) => {
                         const statusCfg =
                           STATUS_OPTIONS.find((s) => s.id === p.status) || STATUS_OPTIONS[0]
                         const isHovered = hoveredPlot?.plotNo === p.plotNo

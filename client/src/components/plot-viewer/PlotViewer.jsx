@@ -601,7 +601,7 @@ export default function PlotViewer({
                   className="plot-viewer__overlay-svg"
                   aria-label="Interactive Plot Overlay"
                 >
-                  {displayPlots.map((plot) => {
+                  {displayPlots.filter((plot) => Boolean(plot.svgPath && plot.svgPath.trim())).map((plot) => {
                 const isMatch =
                   activeFilter === 'All' ||
                   plot.status === activeFilter ||
